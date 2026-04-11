@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Berlin Property Finder</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Berlin Property Finder</h1>
+            <span class="search-mode-badge" id="searchModeBadge" title="Search mode"></span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Natural Language Search -->
+        <section class="nl-search">
+            <div class="search-bar">
+                <input type="text" id="nlQuery"
+                       placeholder="Describe what you're looking for... e.g. 'affordable land in Treptow under 250k'"
+                       autocomplete="off">
+                <button id="searchBtn" onclick="doSearch()">Search</button>
+            </div>
+        </section>
+
+        <!-- Structured Filters (collapsible) -->
+        <section class="filters">
+            <button class="filters-toggle" onclick="toggleFilters()">
+                <span id="filtersToggleText">Show filters</span>
+            </button>
+            <div class="filters-panel" id="filtersPanel">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="budget">Budget (EUR)</label>
+                        <input type="number" id="budget" placeholder="e.g. 300000" min="0" step="10000">
+                    </div>
+                    <div class="filter-group">
+                        <label for="propertyType">Property Type</label>
+                        <select id="propertyType">
+                            <option value="land">Land / Grundstück</option>
+                            <option value="apartment">Apartment / Wohnung</option>
+                            <option value="house">House / Haus</option>
+                            <option value="all">All Types</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="district">District</label>
+                        <select id="district">
+                            <option value="">All Districts</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="minSize">Min Size (m²)</label>
+                        <input type="number" id="minSize" placeholder="e.g. 50" min="0">
+                    </div>
+                    <div class="filter-group">
+                        <label for="sortBy">Sort By</label>
+                        <select id="sortBy">
+                            <option value="deal_score">Best Deal</option>
+                            <option value="growth_score">Growth Potential</option>
+                            <option value="price">Lowest Price</option>
+                            <option value="size">Largest Size</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demo mode banner -->
+        <div class="demo-banner" id="demoBanner" style="display:none;">
+            <strong>Demo Mode</strong> — <span id="demoMessage">Showing sample data</span>
+        </div>
+
+        <!-- Parsed query feedback -->
+        <div class="parsed-params" id="parsedParams" style="display:none;"></div>
+
+        <!-- Results summary -->
+        <div class="results-summary" id="resultsSummary" style="display:none;">
+            <span id="summaryText"></span>
+        </div>
+
+        <!-- Loading overlay -->
+        <div class="loading" id="loading" style="display:none;">
+            <div class="spinner"></div>
+            <p>Searching properties...</p>
+        </div>
+
+        <!-- Results grid -->
+        <div class="results-grid" id="resultsGrid"></div>
+
+        <!-- District Reference -->
+        <section class="district-ref">
+            <button class="district-ref-toggle" onclick="toggleDistrictRef()">
+                District Price Reference
+            </button>
+            <div class="district-ref-panel" id="districtRefPanel" style="display:none;">
+                <table id="districtTable">
+                    <thead>
+                        <tr>
+                            <th>District</th>
+                            <th>Avg Price/m²</th>
+                            <th>Growth</th>
+                            <th>Tier</th>
+                        </tr>
+                    </thead>
+                    <tbody id="districtTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Berlin Property Finder &mdash; Data from ImmoScout24 &amp; Berlin market reports (2025)</p>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

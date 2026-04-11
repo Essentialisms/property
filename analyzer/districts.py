@@ -1,0 +1,324 @@
+"""Berlin district reference data for property deal scoring.
+
+Average prices are for residential property (2025 values).
+Growth trends are annual multipliers (1.08 = 8% YoY growth).
+"""
+
+BERLIN_DISTRICTS = {
+    "Mitte": {
+        "avg_price_m2": 7800,
+        "growth_trend": 1.02,
+        "tier": "premium",
+    },
+    "Prenzlauer Berg": {
+        "avg_price_m2": 6150,
+        "growth_trend": 1.01,
+        "tier": "premium",
+    },
+    "Charlottenburg": {
+        "avg_price_m2": 6100,
+        "growth_trend": 1.00,
+        "tier": "premium",
+    },
+    "Kreuzberg": {
+        "avg_price_m2": 6100,
+        "growth_trend": 1.03,
+        "tier": "premium",
+    },
+    "Friedrichshain": {
+        "avg_price_m2": 5900,
+        "growth_trend": 1.04,
+        "tier": "high",
+    },
+    "Charlottenburg-Wilmersdorf": {
+        "avg_price_m2": 5886,
+        "growth_trend": 1.00,
+        "tier": "high",
+    },
+    "Wilmersdorf": {
+        "avg_price_m2": 5886,
+        "growth_trend": 1.00,
+        "tier": "high",
+    },
+    "Schoeneberg": {
+        "avg_price_m2": 5500,
+        "growth_trend": 1.01,
+        "tier": "high",
+    },
+    "Tempelhof-Schoeneberg": {
+        "avg_price_m2": 4500,
+        "growth_trend": 1.03,
+        "tier": "mid",
+    },
+    "Pankow": {
+        "avg_price_m2": 4867,
+        "growth_trend": 1.05,
+        "tier": "mid",
+    },
+    "Steglitz-Zehlendorf": {
+        "avg_price_m2": 4800,
+        "growth_trend": 1.02,
+        "tier": "mid",
+    },
+    "Steglitz": {
+        "avg_price_m2": 4800,
+        "growth_trend": 1.02,
+        "tier": "mid",
+    },
+    "Zehlendorf": {
+        "avg_price_m2": 4800,
+        "growth_trend": 1.02,
+        "tier": "mid",
+    },
+    "Lichtenberg": {
+        "avg_price_m2": 4574,
+        "growth_trend": 1.06,
+        "tier": "mid",
+    },
+    "Tempelhof": {
+        "avg_price_m2": 4500,
+        "growth_trend": 1.03,
+        "tier": "mid",
+    },
+    "Neukoelln": {
+        "avg_price_m2": 4300,
+        "growth_trend": 1.07,
+        "tier": "emerging",
+    },
+    "Treptow-Koepenick": {
+        "avg_price_m2": 4200,
+        "growth_trend": 1.08,
+        "tier": "emerging",
+    },
+    "Treptow": {
+        "avg_price_m2": 4200,
+        "growth_trend": 1.08,
+        "tier": "emerging",
+    },
+    "Koepenick": {
+        "avg_price_m2": 4200,
+        "growth_trend": 1.08,
+        "tier": "emerging",
+    },
+    "Friedrichshain-Kreuzberg": {
+        "avg_price_m2": 6000,
+        "growth_trend": 1.035,
+        "tier": "high",
+    },
+    "Spandau": {
+        "avg_price_m2": 3800,
+        "growth_trend": 1.04,
+        "tier": "emerging",
+    },
+    "Reinickendorf": {
+        "avg_price_m2": 3636,
+        "growth_trend": 1.03,
+        "tier": "budget",
+    },
+    "Marzahn-Hellersdorf": {
+        "avg_price_m2": 3160,
+        "growth_trend": 1.05,
+        "tier": "budget",
+    },
+    "Marzahn": {
+        "avg_price_m2": 3160,
+        "growth_trend": 1.05,
+        "tier": "budget",
+    },
+    "Hellersdorf": {
+        "avg_price_m2": 3160,
+        "growth_trend": 1.05,
+        "tier": "budget",
+    },
+    "Wedding": {
+        "avg_price_m2": 5200,
+        "growth_trend": 1.04,
+        "tier": "mid",
+    },
+    "Moabit": {
+        "avg_price_m2": 5800,
+        "growth_trend": 1.02,
+        "tier": "high",
+    },
+}
+
+# Also support common German-character variants
+_UMLAUT_ALIASES = {
+    "Schöneberg": "Schoeneberg",
+    "Tempelhof-Schöneberg": "Tempelhof-Schoeneberg",
+    "Neukölln": "Neukoelln",
+    "Treptow-Köpenick": "Treptow-Koepenick",
+    "Köpenick": "Koepenick",
+}
+
+for umlaut_name, ascii_name in _UMLAUT_ALIASES.items():
+    if ascii_name in BERLIN_DISTRICTS:
+        BERLIN_DISTRICTS[umlaut_name] = BERLIN_DISTRICTS[ascii_name]
+
+
+# Berlin postcodes to district mapping
+POSTCODE_TO_DISTRICT = {
+    # Mitte
+    "10115": "Mitte", "10117": "Mitte", "10119": "Mitte",
+    "10178": "Mitte", "10179": "Mitte", "10785": "Mitte",
+    "13347": "Mitte", "13349": "Mitte", "13351": "Mitte",
+    "13353": "Mitte", "13355": "Mitte", "13357": "Mitte",
+    "13359": "Mitte",
+    # Prenzlauer Berg
+    "10405": "Prenzlauer Berg", "10407": "Prenzlauer Berg",
+    "10409": "Prenzlauer Berg", "10435": "Prenzlauer Berg",
+    "10437": "Prenzlauer Berg", "10439": "Prenzlauer Berg",
+    "10440": "Prenzlauer Berg",
+    # Friedrichshain
+    "10243": "Friedrichshain", "10245": "Friedrichshain",
+    "10247": "Friedrichshain", "10249": "Friedrichshain",
+    # Kreuzberg
+    "10961": "Kreuzberg", "10963": "Kreuzberg", "10965": "Kreuzberg",
+    "10967": "Kreuzberg", "10969": "Kreuzberg", "10997": "Kreuzberg",
+    "10999": "Kreuzberg",
+    # Charlottenburg
+    "10585": "Charlottenburg", "10587": "Charlottenburg",
+    "10589": "Charlottenburg", "10623": "Charlottenburg",
+    "10625": "Charlottenburg", "10627": "Charlottenburg",
+    "10629": "Charlottenburg", "14059": "Charlottenburg",
+    # Wilmersdorf
+    "10707": "Wilmersdorf", "10709": "Wilmersdorf",
+    "10711": "Wilmersdorf", "10713": "Wilmersdorf",
+    "10715": "Wilmersdorf", "10717": "Wilmersdorf",
+    "10719": "Wilmersdorf",
+    # Schoeneberg
+    "10777": "Schoeneberg", "10779": "Schoeneberg",
+    "10781": "Schoeneberg", "10783": "Schoeneberg",
+    "10787": "Schoeneberg", "10789": "Schoeneberg",
+    "10823": "Schoeneberg", "10825": "Schoeneberg",
+    "10827": "Schoeneberg", "10829": "Schoeneberg",
+    # Tempelhof
+    "12099": "Tempelhof", "12101": "Tempelhof",
+    "12103": "Tempelhof", "12105": "Tempelhof",
+    "12107": "Tempelhof", "12109": "Tempelhof",
+    # Neukoelln
+    "12043": "Neukoelln", "12045": "Neukoelln",
+    "12047": "Neukoelln", "12049": "Neukoelln",
+    "12051": "Neukoelln", "12053": "Neukoelln",
+    "12055": "Neukoelln", "12057": "Neukoelln",
+    "12059": "Neukoelln",
+    # Treptow
+    "12435": "Treptow", "12437": "Treptow",
+    "12439": "Treptow", "12459": "Treptow",
+    # Koepenick
+    "12555": "Koepenick", "12557": "Koepenick",
+    "12559": "Koepenick", "12587": "Koepenick",
+    "12589": "Koepenick",
+    # Pankow
+    "10439": "Pankow", "13086": "Pankow", "13088": "Pankow",
+    "13089": "Pankow", "13125": "Pankow", "13127": "Pankow",
+    "13129": "Pankow", "13156": "Pankow", "13158": "Pankow",
+    "13159": "Pankow", "13187": "Pankow", "13189": "Pankow",
+    # Lichtenberg
+    "10315": "Lichtenberg", "10317": "Lichtenberg",
+    "10318": "Lichtenberg", "10319": "Lichtenberg",
+    "10365": "Lichtenberg", "10367": "Lichtenberg",
+    "10369": "Lichtenberg",
+    # Spandau
+    "13581": "Spandau", "13583": "Spandau", "13585": "Spandau",
+    "13587": "Spandau", "13589": "Spandau", "13591": "Spandau",
+    "13593": "Spandau", "13595": "Spandau", "13597": "Spandau",
+    "13599": "Spandau", "14052": "Spandau",
+    # Steglitz
+    "12157": "Steglitz", "12161": "Steglitz", "12163": "Steglitz",
+    "12165": "Steglitz", "12167": "Steglitz", "12169": "Steglitz",
+    # Zehlendorf
+    "14109": "Zehlendorf", "14129": "Zehlendorf",
+    "14163": "Zehlendorf", "14165": "Zehlendorf",
+    "14167": "Zehlendorf", "14169": "Zehlendorf",
+    # Reinickendorf
+    "13403": "Reinickendorf", "13405": "Reinickendorf",
+    "13407": "Reinickendorf", "13409": "Reinickendorf",
+    "13435": "Reinickendorf", "13437": "Reinickendorf",
+    "13439": "Reinickendorf", "13465": "Reinickendorf",
+    "13467": "Reinickendorf", "13469": "Reinickendorf",
+    "13503": "Reinickendorf", "13505": "Reinickendorf",
+    "13507": "Reinickendorf", "13509": "Reinickendorf",
+    # Marzahn-Hellersdorf
+    "12619": "Marzahn", "12621": "Marzahn", "12623": "Marzahn",
+    "12627": "Marzahn", "12629": "Marzahn",
+    "12679": "Marzahn", "12681": "Marzahn", "12683": "Marzahn",
+    "12685": "Marzahn", "12687": "Marzahn", "12689": "Marzahn",
+    # Wedding / Moabit
+    "13347": "Wedding", "13349": "Wedding", "13351": "Wedding",
+    "13353": "Wedding", "13359": "Wedding",
+    "10551": "Moabit", "10553": "Moabit", "10555": "Moabit",
+    "10557": "Moabit", "10559": "Moabit",
+}
+
+
+def identify_district(address: str, postcode: str = None) -> str | None:
+    """Match an address string or postcode to a Berlin district."""
+    # Try substring match on district names first
+    address_lower = address.lower() if address else ""
+
+    # Check all district names (longest first to match e.g. "Treptow-Koepenick" before "Treptow")
+    sorted_names = sorted(BERLIN_DISTRICTS.keys(), key=len, reverse=True)
+    for name in sorted_names:
+        if name.lower() in address_lower:
+            return name
+
+    # Fallback: try postcode lookup
+    if postcode:
+        clean_postcode = postcode.strip()
+        if clean_postcode in POSTCODE_TO_DISTRICT:
+            return POSTCODE_TO_DISTRICT[clean_postcode]
+
+    # Try to extract postcode from address (5-digit number)
+    import re
+    match = re.search(r"\b(\d{5})\b", address or "")
+    if match:
+        extracted = match.group(1)
+        if extracted in POSTCODE_TO_DISTRICT:
+            return POSTCODE_TO_DISTRICT[extracted]
+
+    return None
+
+
+def get_district_data(district_name: str) -> dict | None:
+    """Get reference data for a district."""
+    return BERLIN_DISTRICTS.get(district_name)
+
+
+def get_all_district_names() -> list[str]:
+    """Return canonical district names (no aliases)."""
+    seen = set()
+    canonical = []
+    for name, data in BERLIN_DISTRICTS.items():
+        key = (data["avg_price_m2"], data["tier"])
+        if key not in seen or "-" in name:  # prefer compound names
+            seen.add(key)
+            canonical.append(name)
+    # Deduplicate and sort
+    return sorted(set(canonical))
+
+
+def get_districts_summary() -> list[dict]:
+    """Return district data for the frontend reference table."""
+    seen = set()
+    result = []
+    # Show the main 12 administrative districts + key neighborhoods
+    priority_names = [
+        "Mitte", "Friedrichshain-Kreuzberg", "Pankow",
+        "Charlottenburg-Wilmersdorf", "Spandau", "Steglitz-Zehlendorf",
+        "Tempelhof-Schoeneberg", "Neukoelln", "Treptow-Koepenick",
+        "Marzahn-Hellersdorf", "Lichtenberg", "Reinickendorf",
+        "Prenzlauer Berg", "Kreuzberg", "Friedrichshain",
+        "Wedding", "Moabit",
+    ]
+    for name in priority_names:
+        if name in BERLIN_DISTRICTS and name not in seen:
+            seen.add(name)
+            data = BERLIN_DISTRICTS[name]
+            result.append({
+                "name": name,
+                "avg_price_m2": data["avg_price_m2"],
+                "growth_pct": round((data["growth_trend"] - 1) * 100, 1),
+                "tier": data["tier"],
+            })
+    return result
