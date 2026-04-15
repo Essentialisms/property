@@ -1,4 +1,4 @@
-"""Natural language query parser with Claude API + keyword fallback."""
+"""Natural language query parser with OpenAI API + keyword fallback."""
 
 import json
 import os
@@ -10,14 +10,14 @@ from analyzer.districts import get_all_district_names
 
 logger = logging.getLogger(__name__)
 
-_ANTHROPIC_KEY = None
+_OPENAI_KEY = None
 
 
 def _get_api_key() -> str | None:
-    global _ANTHROPIC_KEY
-    if _ANTHROPIC_KEY is None:
-        _ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
-    return _ANTHROPIC_KEY if _ANTHROPIC_KEY else None
+    global _OPENAI_KEY
+    if _OPENAI_KEY is None:
+        _OPENAI_KEY = os.environ.get("OPENAI_API_KEY", "")
+    return _OPENAI_KEY if _OPENAI_KEY else None
 
 
 def is_ai_mode_available() -> bool:
@@ -36,28 +36,25 @@ def parse_query(query: str) -> tuple[SearchParams, str]:
     api_key = _get_api_key()
     if api_key:
         try:
-            params = _parse_with_claude(query, api_key)
+            params = _parse_with_openai(query, api_key)
             if params:
                 return params, "ai"
         except Exception as e:
-            logger.warning(f"Claude API parsing failed, falling back to keyword: {e}")
+            logger.warning(f"OpenAI API parsing failed, falling back to keyword: {e}")
 
     return keyword_parse(query), "keyword"
 
 
-def _parse_with_claude(query: str, api_key: str) -> SearchParams | None:
-    """Use Claude API to extract structured search params from natural language."""
-    import anthropic
+def _parse_with_openai(query: str, api_key: str) -> SearchParams | None:
+    """Use OpenAI API to extract structured search params from natural language."""
+    from openai import OpenAI
 
     districts = get_all_district_names()
     district_list = ", ".join(districts)
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = OpenAI(api_key=api_key)
 
-    message = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=500,
-        system=f"""You extract structured property search parameters from natural language queries about Berlin real estate.
+    system_prompt = f"""You extract structured property search parameters from natural language queries about Berlin real estate.
 
 Available Berlin districts: {district_list}
 
@@ -74,21 +71,19 @@ For sort_by, use "deal_score" if the user wants cheap/affordable/bargain/underva
 If the user mentions "east" or "eastern" Berlin, map to eastern districts like Lichtenberg, Treptow-Koepenick, Marzahn-Hellersdorf, Friedrichshain.
 If they say "west" or "western", map to Charlottenburg, Spandau, Steglitz-Zehlendorf, Reinickendorf.
 
-Return ONLY the JSON, no other text.""",
+Return ONLY the JSON, no other text."""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=500,
+        response_format={"type": "json_object"},
         messages=[
-            {"role": "user", "content": query}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": query},
         ],
     )
 
-    response_text = message.content[0].text.strip()
-
-    # Extract JSON from response
-    if response_text.startswith("```"):
-        response_text = response_text.split("```")[1]
-        if response_text.startswith("json"):
-            response_text = response_text[4:]
-        response_text = response_text.strip()
-
+    response_text = response.choices[0].message.content.strip()
     data = json.loads(response_text)
 
     return SearchParams(
