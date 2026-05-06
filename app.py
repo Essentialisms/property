@@ -1,5 +1,6 @@
 """Berlin Property Finder — Flask application."""
 
+import os
 import logging
 from flask import Flask, render_template, request, jsonify
 
@@ -43,11 +44,14 @@ def api_search():
             sort_by=data.get("sort_by", "deal_score"),
         )
 
+    # Cap pages in serverless environments (Vercel has 10s timeout on free tier)
+    max_pages = min(params.max_pages, 2) if os.environ.get("VERCEL") else params.max_pages
+
     # Fetch properties
     properties, is_demo, error = search_properties(
         property_type=params.property_type,
         districts=params.districts if params.districts else None,
-        max_pages=params.max_pages,
+        max_pages=max_pages,
     )
 
     # Rate all properties
