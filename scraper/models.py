@@ -16,6 +16,7 @@ class Property:
     url: str
     image_url: Optional[str] = None
     rooms: Optional[float] = None
+    subtype: Optional[str] = None  # detached / semi_detached / townhouse / villa / bungalow / multi_family
 
     def to_dict(self):
         return asdict(self)

@@ -11,6 +11,15 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("nlQuery").addEventListener("keydown", (e) => {
         if (e.key === "Enter") doSearch();
     });
+
+    // Show house subtype filter only when property type is house
+    const propertyType = document.getElementById("propertyType");
+    const subtypeGroup = document.getElementById("houseSubtypeGroup");
+    const updateSubtypeVisibility = () => {
+        subtypeGroup.style.display = propertyType.value === "house" ? "" : "none";
+    };
+    propertyType.addEventListener("change", updateSubtypeVisibility);
+    updateSubtypeVisibility();
 });
 
 // ===== API calls =====
@@ -56,6 +65,7 @@ async function doSearch() {
     const district = document.getElementById("district").value;
     const minSize = document.getElementById("minSize").value;
     const sortBy = document.getElementById("sortBy").value;
+    const houseSubtype = document.getElementById("houseSubtype")?.value;
 
     showLoading(true);
     hideResults();
@@ -66,6 +76,7 @@ async function doSearch() {
     if (district) body.districts = [district];
     if (minSize) body.min_size = parseFloat(minSize);
     if (sortBy) body.sort_by = sortBy;
+    if (propertyType === "house" && houseSubtype) body.subtype = houseSubtype;
 
     try {
         const resp = await fetch("/api/search", {
@@ -253,7 +264,7 @@ function createPropertyCard(p) {
                 ${p.price != null ? `<span class="detail-item"><strong>${formatEur(p.price)}</strong></span>` : ""}
                 ${p.area_m2 != null ? `<span class="detail-item"><strong>${p.area_m2} m²</strong></span>` : ""}
                 ${p.rooms != null ? `<span class="detail-item"><strong>${p.rooms}</strong> <span>rooms</span></span>` : ""}
-                ${p.property_type ? `<span class="detail-item"><span>${p.property_type}</span></span>` : ""}
+                ${(p.subtype || p.property_type) ? `<span class="detail-item"><span>${escapeHtml(subtypeLabel(p.subtype) || p.property_type)}</span></span>` : ""}
             </div>
             ${comparisonHtml}
             ${scoreBarsHtml}
@@ -333,6 +344,18 @@ function scoreColor(score) {
     if (score >= 50) return "var(--grade-c)";
     if (score >= 35) return "var(--grade-d)";
     return "var(--grade-f)";
+}
+
+const SUBTYPE_LABELS = {
+    detached: "Single-family",
+    semi_detached: "Semi-detached",
+    townhouse: "Townhouse",
+    villa: "Villa",
+    bungalow: "Bungalow",
+    multi_family: "Multi-family",
+};
+function subtypeLabel(s) {
+    return s ? (SUBTYPE_LABELS[s] || s) : null;
 }
 
 function escapeHtml(str) {

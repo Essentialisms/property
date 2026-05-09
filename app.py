@@ -44,6 +44,10 @@ def api_search():
             sort_by=data.get("sort_by", "deal_score"),
         )
 
+    # House subtype filter (single-family, semi-detached, townhouse, etc.).
+    raw_sub = data.get("subtypes") or ([] if not data.get("subtype") else [data["subtype"]])
+    subtypes = [s for s in raw_sub if s]
+
     # Cap pages in serverless environments (Vercel has 10s timeout on free tier)
     max_pages = min(params.max_pages, 2) if os.environ.get("VERCEL") else params.max_pages
 
@@ -52,6 +56,7 @@ def api_search():
         property_type=params.property_type,
         districts=params.districts if params.districts else None,
         max_pages=max_pages,
+        subtypes=subtypes or None,
     )
 
     # Rate all properties
