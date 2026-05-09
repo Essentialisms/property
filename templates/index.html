@@ -9,12 +9,32 @@
 <body>
     <header>
         <div class="header-content">
-            <h1>Berlin Property Finder</h1>
+            <h1><a href="{{ url_for('index') }}" class="brand">Berlin Property Finder</a></h1>
             <span class="search-mode-badge" id="searchModeBadge" title="Search mode"></span>
+            <nav class="auth-nav">
+                <a href="{{ url_for('payments.pricing') }}">Pricing</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('auth.account') }}">{{ current_user.email }}</a>
+                    <a href="{{ url_for('auth.logout') }}">Log out</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}">Log in</a>
+                    <a href="{{ url_for('auth.signup') }}" class="cta">Sign up</a>
+                {% endif %}
+            </nav>
         </div>
     </header>
 
     <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, msg in messages %}
+                        <div class="flash flash-{{ category }}">{{ msg }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <!-- Natural Language Search -->
         <section class="nl-search">
             <div class="search-bar">
@@ -22,7 +42,20 @@
                        placeholder="Describe what you're looking for... e.g. 'affordable land in Treptow under 250k'"
                        autocomplete="off">
                 <button id="searchBtn" onclick="doSearch()">Search</button>
+                <button id="agentBtn" class="agent-btn" onclick="doAgentSearch()" title="Agentic search (requires subscription)">
+                    Agent search
+                </button>
             </div>
+            <p class="agent-hint" id="agentHint">
+                {% if current_user.is_authenticated and current_user.has_active_subscription() %}
+                    Agentic search is enabled on your account.
+                {% elif current_user.is_authenticated %}
+                    <a href="{{ url_for('payments.pricing') }}">Subscribe</a> to unlock agentic search.
+                {% else %}
+                    <a href="{{ url_for('auth.signup') }}">Sign up</a> &middot;
+                    <a href="{{ url_for('payments.pricing') }}">See plans</a> for agentic search.
+                {% endif %}
+            </p>
         </section>
 
         <!-- Structured Filters (collapsible) -->

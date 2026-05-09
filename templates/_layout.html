@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Berlin Property Finder{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1><a href="{{ url_for('index') }}" class="brand">Berlin Property Finder</a></h1>
+            <nav class="auth-nav">
+                <a href="{{ url_for('payments.pricing') }}">Pricing</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('auth.account') }}">{{ current_user.email }}</a>
+                    <a href="{{ url_for('auth.logout') }}">Log out</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}">Log in</a>
+                    <a href="{{ url_for('auth.signup') }}" class="cta">Sign up</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, msg in messages %}
+                        <div class="flash flash-{{ category }}">{{ msg }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <p>Berlin Property Finder &mdash; Data from ImmoScout24 &amp; Berlin market reports (2025)</p>
+    </footer>
+</body>
+</html>

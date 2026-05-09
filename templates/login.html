@@ -1,0 +1,17 @@
+{% extends "_layout.html" %}
+{% block title %}Log in — Berlin Property Finder{% endblock %}
+{% block content %}
+<section class="auth-card">
+    <h2>Log in</h2>
+    <form method="post" action="{{ url_for('auth.login') }}">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autofocus>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit" class="primary">Log in</button>
+    </form>
+    <p class="muted">No account yet? <a href="{{ url_for('auth.signup') }}">Sign up</a>.</p>
+</section>
+{% endblock %}
