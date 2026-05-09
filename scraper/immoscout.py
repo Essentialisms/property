@@ -8,7 +8,7 @@ import requests
 from scraper.models import Property
 from scraper.parser import parse_search_results, parse_total_pages
 from scraper.blob_fetch import fetch_from_blob
-from analyzer.districts import identify_district
+from analyzer.districts import identify_district, resolve_bezirk
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +30,24 @@ PROPERTY_TYPE_SLUGS = {
 BASE_URL = "https://www.immobilienscout24.de/Suche/de/berlin/berlin"
 
 
-def _district_matches(prop_district: str | None, filter_districts: list[str]) -> bool:
-    """Match property district against filter using either historical (Ortsteil)
-    or modern (Bezirk) names. e.g. 'Zehlendorf' matches 'Steglitz-Zehlendorf'.
+def _district_matches(prop: Property, filter_districts: list[str]) -> bool:
+    """Match a property to a filter using Bezirk geography.
+
+    A property's Bezirk is resolved from its postcode (preferred) or district
+    string. The filter is normalised the same way. The match is a Bezirk-set
+    intersection — so 'Zehlendorf' (Ortsteil) and 'Steglitz-Zehlendorf'
+    (Bezirk) both resolve to Steglitz-Zehlendorf and match each other,
+    regardless of how the listing's `district` field happens to be spelled.
     """
-    if not prop_district:
+    prop_bezirk = resolve_bezirk(prop.postcode, prop.district)
+    if not prop_bezirk:
         return False
-    pd = prop_district.lower().strip()
-    pd_parts = {part.strip() for part in pd.split("-") if part.strip()}
+    accepted = set()
     for fd in filter_districts:
-        fd_low = fd.lower().strip()
-        if pd == fd_low:
-            return True
-        fd_parts = {part.strip() for part in fd_low.split("-") if part.strip()}
-        if pd_parts & fd_parts:
-            return True
-    return False
+        bz = resolve_bezirk(None, fd)
+        if bz:
+            accepted.add(bz)
+    return prop_bezirk in accepted
 
 
 def search_properties(
@@ -66,7 +68,7 @@ def search_properties(
             all_properties = [p for p in all_properties if p.property_type == property_type]
         if districts:
             all_properties = [
-                p for p in all_properties if _district_matches(p.district, districts)
+                p for p in all_properties if _district_matches(p, districts)
             ]
         return all_properties, False, None
 
@@ -141,7 +143,7 @@ def search_properties(
 
     # Filter by districts if specified — empty result means empty result.
     if districts:
-        all_properties = [p for p in all_properties if _district_matches(p.district, districts)]
+        all_properties = [p for p in all_properties if _district_matches(p, districts)]
 
     return all_properties, is_demo, error
 

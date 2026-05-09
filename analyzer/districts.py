@@ -252,6 +252,195 @@ POSTCODE_TO_DISTRICT = {
 }
 
 
+# Each Ortsteil (small neighborhood, the value in POSTCODE_TO_DISTRICT) belongs
+# to one of the 12 modern Berlin Bezirke. This is the bridge that lets the
+# search filter work geographically rather than as a string match.
+ORTSTEIL_TO_BEZIRK = {
+    "Mitte": "Mitte",
+    "Wedding": "Mitte",
+    "Moabit": "Mitte",
+    "Tiergarten": "Mitte",
+    "Hansaviertel": "Mitte",
+
+    "Friedrichshain": "Friedrichshain-Kreuzberg",
+    "Kreuzberg": "Friedrichshain-Kreuzberg",
+
+    "Pankow": "Pankow",
+    "Prenzlauer Berg": "Pankow",
+    "Weissensee": "Pankow",
+
+    "Charlottenburg": "Charlottenburg-Wilmersdorf",
+    "Wilmersdorf": "Charlottenburg-Wilmersdorf",
+    "Halensee": "Charlottenburg-Wilmersdorf",
+    "Schmargendorf": "Charlottenburg-Wilmersdorf",
+    "Grunewald": "Charlottenburg-Wilmersdorf",
+    "Westend": "Charlottenburg-Wilmersdorf",
+
+    "Spandau": "Spandau",
+
+    "Steglitz": "Steglitz-Zehlendorf",
+    "Zehlendorf": "Steglitz-Zehlendorf",
+    "Lichterfelde": "Steglitz-Zehlendorf",
+    "Lankwitz": "Steglitz-Zehlendorf",
+    "Dahlem": "Steglitz-Zehlendorf",
+    "Nikolassee": "Steglitz-Zehlendorf",
+    "Wannsee": "Steglitz-Zehlendorf",
+
+    "Schoeneberg": "Tempelhof-Schoeneberg",
+    "Tempelhof": "Tempelhof-Schoeneberg",
+    "Friedenau": "Tempelhof-Schoeneberg",
+    "Mariendorf": "Tempelhof-Schoeneberg",
+    "Marienfelde": "Tempelhof-Schoeneberg",
+    "Lichtenrade": "Tempelhof-Schoeneberg",
+
+    "Neukoelln": "Neukoelln",
+    "Britz": "Neukoelln",
+    "Buckow": "Neukoelln",
+    "Rudow": "Neukoelln",
+    "Gropiusstadt": "Neukoelln",
+
+    "Treptow": "Treptow-Koepenick",
+    "Koepenick": "Treptow-Koepenick",
+    "Adlershof": "Treptow-Koepenick",
+    "Baumschulenweg": "Treptow-Koepenick",
+    "Johannisthal": "Treptow-Koepenick",
+    "Friedrichshagen": "Treptow-Koepenick",
+    "Rahnsdorf": "Treptow-Koepenick",
+    "Mueggelheim": "Treptow-Koepenick",
+    "Gruenau": "Treptow-Koepenick",
+    "Schmoeckwitz": "Treptow-Koepenick",
+    "Altglienicke": "Treptow-Koepenick",
+    "Bohnsdorf": "Treptow-Koepenick",
+    "Niederschoeneweide": "Treptow-Koepenick",
+    "Oberschoeneweide": "Treptow-Koepenick",
+
+    "Marzahn": "Marzahn-Hellersdorf",
+    "Hellersdorf": "Marzahn-Hellersdorf",
+    "Biesdorf": "Marzahn-Hellersdorf",
+    "Kaulsdorf": "Marzahn-Hellersdorf",
+    "Mahlsdorf": "Marzahn-Hellersdorf",
+
+    "Lichtenberg": "Lichtenberg",
+    "Karlshorst": "Lichtenberg",
+    "Friedrichsfelde": "Lichtenberg",
+    "Hohenschoenhausen": "Lichtenberg",
+    "Rummelsburg": "Lichtenberg",
+    "Fennpfuhl": "Lichtenberg",
+    "Malchow": "Lichtenberg",
+
+    "Reinickendorf": "Reinickendorf",
+    "Tegel": "Reinickendorf",
+    "Frohnau": "Reinickendorf",
+    "Hermsdorf": "Reinickendorf",
+    "Waidmannslust": "Reinickendorf",
+    "Wittenau": "Reinickendorf",
+    "Heiligensee": "Reinickendorf",
+}
+
+
+# Authoritative postcode → Bezirk mapping for all of Berlin. Some postcodes
+# straddle Bezirk borders; in those cases the dominant Bezirk is used.
+POSTCODE_TO_BEZIRK = {
+    # Mitte
+    **{pc: "Mitte" for pc in [
+        "10115", "10117", "10119", "10178", "10179",
+        "10551", "10553", "10555", "10557", "10559",
+        "10785",
+        "13347", "13349", "13351", "13353", "13355", "13357", "13359",
+    ]},
+    # Friedrichshain-Kreuzberg
+    **{pc: "Friedrichshain-Kreuzberg" for pc in [
+        "10243", "10245", "10247", "10249",
+        "10961", "10963", "10965", "10967", "10969",
+        "10997", "10999",
+    ]},
+    # Pankow
+    **{pc: "Pankow" for pc in [
+        "10405", "10407", "10409", "10435", "10437", "10439",
+        "13086", "13087", "13088", "13089",
+        "13125", "13127", "13129",
+        "13156", "13158", "13159", "13187", "13189",
+    ]},
+    # Charlottenburg-Wilmersdorf
+    **{pc: "Charlottenburg-Wilmersdorf" for pc in [
+        "10585", "10587", "10589", "10623", "10625", "10627", "10629",
+        "10707", "10709", "10711", "10713", "10715", "10717", "10719",
+        "10787", "10789",
+        "14050", "14052", "14053", "14055", "14057", "14059",
+        "14193", "14199",
+    ]},
+    # Spandau
+    **{pc: "Spandau" for pc in [
+        "13581", "13583", "13585", "13587", "13589",
+        "13591", "13593", "13595", "13597", "13599",
+        "14089",
+    ]},
+    # Steglitz-Zehlendorf
+    **{pc: "Steglitz-Zehlendorf" for pc in [
+        "12157", "12161", "12163", "12165", "12167", "12169",
+        "12203", "12205", "12207", "12209", "12247", "12249",
+        "14109", "14129", "14163", "14165", "14167", "14169",
+        "14195",
+    ]},
+    # Tempelhof-Schöneberg
+    **{pc: "Tempelhof-Schoeneberg" for pc in [
+        "10777", "10779", "10781", "10783",
+        "10825", "10827", "10829",
+        "12099", "12101", "12103", "12105", "12107", "12109", "12159",
+        "12277", "12279", "12305", "12307", "12309",
+    ]},
+    # Neukölln
+    **{pc: "Neukoelln" for pc in [
+        "12043", "12045", "12047", "12049", "12051", "12053",
+        "12055", "12057", "12059",
+        "12347", "12349", "12351", "12353", "12355", "12357", "12359",
+    ]},
+    # Treptow-Köpenick
+    **{pc: "Treptow-Koepenick" for pc in [
+        "12435", "12437", "12439", "12459",
+        "12487", "12489", "12524", "12526", "12527",
+        "12555", "12557", "12559", "12587", "12589",
+    ]},
+    # Marzahn-Hellersdorf
+    **{pc: "Marzahn-Hellersdorf" for pc in [
+        "12619", "12621", "12623", "12627", "12629",
+        "12679", "12681", "12683", "12685", "12687", "12689",
+    ]},
+    # Lichtenberg
+    **{pc: "Lichtenberg" for pc in [
+        "10315", "10317", "10318", "10319",
+        "10365", "10367", "10369",
+        "13051", "13053", "13055", "13057", "13059",
+    ]},
+    # Reinickendorf
+    **{pc: "Reinickendorf" for pc in [
+        "13403", "13405", "13407", "13409",
+        "13435", "13437", "13439", "13465", "13467", "13469",
+        "13503", "13505", "13507", "13509",
+        "13627", "13629",
+    ]},
+}
+
+
+def resolve_bezirk(postcode: str | None, district: str | None) -> str | None:
+    """Resolve a property's Bezirk from postcode (preferred) or district string.
+    Returns one of the 12 modern Berlin Bezirke names, or None.
+    """
+    if postcode:
+        bz = POSTCODE_TO_BEZIRK.get(postcode.strip())
+        if bz:
+            return bz
+        # Fall back to the legacy postcode-to-Ortsteil table, then upgrade.
+        ortsteil = POSTCODE_TO_DISTRICT.get(postcode.strip())
+        if ortsteil:
+            return ORTSTEIL_TO_BEZIRK.get(ortsteil, ortsteil)
+    if district:
+        if district in ORTSTEIL_TO_BEZIRK.values():
+            return district
+        return ORTSTEIL_TO_BEZIRK.get(district)
+    return None
+
+
 def identify_district(address: str, postcode: str = None) -> str | None:
     """Match an address string or postcode to a Berlin district."""
     # Try substring match on district names first
