@@ -1,0 +1,15 @@
+{% extends "_layout.html" %}
+{% block title %}Subscription active — Berlin Property Finder{% endblock %}
+{% block content %}
+<section class="auth-card">
+    <h2>You&rsquo;re subscribed</h2>
+    <p>
+        Thanks for subscribing. Your subscription will activate as soon as Stripe sends us
+        the confirmation webhook (usually within a few seconds).
+    </p>
+    <p>
+        <a class="primary button" href="{{ url_for('index') }}">Start an agentic search</a>
+        <a class="button" href="{{ url_for('auth.account') }}">View account</a>
+    </p>
+</section>
+{% endblock %}

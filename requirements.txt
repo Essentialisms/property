@@ -2,3 +2,5 @@ flask
 requests
 beautifulsoup4
 openai
+stripe
+flask-login

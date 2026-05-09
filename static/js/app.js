@@ -49,7 +49,7 @@ async function loadDistricts() {
     }
 }
 
-async function doSearch() {
+function _collectSearchBody() {
     const query = document.getElementById("nlQuery").value.trim();
     const budget = document.getElementById("budget").value;
     const propertyType = document.getElementById("propertyType").value;
@@ -57,22 +57,33 @@ async function doSearch() {
     const minSize = document.getElementById("minSize").value;
     const sortBy = document.getElementById("sortBy").value;
 
-    showLoading(true);
-    hideResults();
-
     const body = { query };
     if (budget) body.budget = parseFloat(budget);
     if (propertyType) body.property_type = propertyType;
     if (district) body.districts = [district];
     if (minSize) body.min_size = parseFloat(minSize);
     if (sortBy) body.sort_by = sortBy;
+    return body;
+}
 
+async function _runSearch(endpoint) {
+    showLoading(true);
+    hideResults();
     try {
-        const resp = await fetch("/api/search", {
+        const resp = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
+            body: JSON.stringify(_collectSearchBody()),
         });
+        if (resp.status === 401) {
+            window.location.href = "/login?next=/";
+            return;
+        }
+        if (resp.status === 402) {
+            const data = await resp.json().catch(() => ({}));
+            window.location.href = data.pricing_url || "/pricing";
+            return;
+        }
         const data = await resp.json();
         currentResults = data;
         renderResults(data);
@@ -82,6 +93,19 @@ async function doSearch() {
     } finally {
         showLoading(false);
     }
+}
+
+async function doSearch() {
+    return _runSearch("/api/search");
+}
+
+async function doAgentSearch() {
+    const query = document.getElementById("nlQuery").value.trim();
+    if (!query) {
+        showError("Agent search needs a natural-language query.");
+        return;
+    }
+    return _runSearch("/api/agent-search");
 }
 
 // ===== Rendering =====

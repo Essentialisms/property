@@ -1,0 +1,44 @@
+{% extends "_layout.html" %}
+{% block title %}Pricing — Agentic Real Estate Search{% endblock %}
+{% block content %}
+<section class="pricing">
+    <h2>Agentic real estate search</h2>
+    <p class="muted">
+        Hand the agent a sentence (&ldquo;a 3-room apartment in Friedrichshain under 500k with growth potential&rdquo;)
+        and it will plan, parse, and rank Berlin listings for you. Pick the cadence that suits your hunt.
+    </p>
+
+    <div class="plan-grid">
+        {% for plan in plans %}
+            <div class="plan-card{% if plan.key == 'monthly' %} plan-card-featured{% endif %}">
+                <h3>{{ plan.name }}</h3>
+                <div class="plan-price">
+                    <span class="amount">{{ plan.price_label }}</span>
+                    <span class="interval">{{ plan.interval_label }}</span>
+                </div>
+                <p class="plan-blurb">{{ plan.blurb }}</p>
+                <ul class="plan-features">
+                    <li>Natural-language search</li>
+                    <li>AI-ranked deal scores</li>
+                    <li>Cancel any time</li>
+                </ul>
+                {% if current_user.is_authenticated %}
+                    <form method="post" action="{{ url_for('payments.create_checkout_session') }}">
+                        <input type="hidden" name="plan" value="{{ plan.key }}">
+                        <button type="submit" class="primary">Subscribe</button>
+                    </form>
+                {% else %}
+                    <a class="primary button" href="{{ url_for('auth.signup') }}">Sign up to subscribe</a>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if current_user.is_authenticated and current_user.has_active_subscription() %}
+        <p class="muted">
+            You&rsquo;re subscribed on the <strong>{{ current_user.subscription_plan or 'unknown' }}</strong> plan.
+            <a href="{{ url_for('auth.account') }}">Manage billing</a>.
+        </p>
+    {% endif %}
+</section>
+{% endblock %}

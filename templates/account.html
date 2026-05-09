@@ -1,0 +1,32 @@
+{% extends "_layout.html" %}
+{% block title %}Account — Berlin Property Finder{% endblock %}
+{% block content %}
+<section class="auth-card">
+    <h2>Your account</h2>
+    <dl class="account-fields">
+        <dt>Email</dt><dd>{{ user.email }}</dd>
+        <dt>Subscription</dt>
+        <dd>
+            {% if user.has_active_subscription() %}
+                <span class="badge badge-active">{{ user.subscription_status }}</span>
+                on the <strong>{{ user.subscription_plan or 'unknown' }}</strong> plan
+            {% elif user.subscription_status %}
+                <span class="badge badge-inactive">{{ user.subscription_status }}</span>
+            {% else %}
+                <span class="badge badge-inactive">none</span>
+            {% endif %}
+        </dd>
+    </dl>
+
+    <div class="account-actions">
+        {% if user.stripe_customer_id %}
+            <form method="post" action="{{ url_for('payments.billing_portal') }}">
+                <button type="submit" class="primary">Manage billing</button>
+            </form>
+        {% endif %}
+        {% if not user.has_active_subscription() %}
+            <a class="primary button" href="{{ url_for('payments.pricing') }}">See plans</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
