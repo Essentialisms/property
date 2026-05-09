@@ -1,8 +1,14 @@
-"""Scrape ImmoScout24 + Immowelt with a headless browser and upload the
-combined dataset to Vercel Blob.
+"""Scrape ImmoScout24 + Immowelt with a headless browser, merge the result
+with the previously-uploaded dataset, and upload to Vercel Blob.
 
 Run locally (datacenter IPs are blocked, AWS WAF requires a real browser).
 Designed to be run by launchd daily.
+
+The blob is *cumulative*: each listing carries `first_seen` and `last_seen`
+ISO timestamps. Listings re-seen in a refresh have their `last_seen`
+advanced and their fields refreshed (e.g. price changes). Listings missing
+from this run are kept in place. Listings whose `last_seen` is older than
+RETENTION_DAYS are pruned at upload time.
 
 Reads no env vars; relies on the local `vercel` CLI being authenticated.
 """
@@ -14,7 +20,8 @@ import logging
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+import urllib.request
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -37,8 +44,10 @@ IS24_SLUGS = {
     "house": "haus-kaufen",
 }
 PROPERTY_TYPES = ("land", "apartment", "house")
-MAX_PAGES_PER_TYPE = 20  # per source per type
+MAX_PAGES_PER_TYPE = 50  # per source per type
 BLOB_PATHNAME = "properties.json"
+BLOB_PUBLIC_URL = "https://5dxkyfjiib2tfjbl.public.blob.vercel-storage.com/properties.json"
+RETENTION_DAYS = 60  # drop listings not seen in this many days
 
 
 def _is24_url(prop_type: str, page: int = 1) -> str:
@@ -149,18 +158,94 @@ def upload(payload_path: Path) -> str:
     return ""
 
 
+def fetch_existing() -> dict[str, dict]:
+    """Pull the current blob (if any) so this run can merge into it."""
+    try:
+        with urllib.request.urlopen(BLOB_PUBLIC_URL, timeout=15) as resp:
+            payload = json.load(resp)
+    except Exception as e:
+        log.warning("No existing blob to merge with (%s) — starting fresh", e)
+        return {}
+    raw = payload.get("properties", []) if isinstance(payload, dict) else []
+    by_id: dict[str, dict] = {}
+    for item in raw:
+        if isinstance(item, dict) and item.get("id"):
+            by_id[item["id"]] = item
+    log.info("Loaded %d existing listings from blob for merge", len(by_id))
+    return by_id
+
+
+def merge(existing: dict[str, dict], scraped: list[dict], now_iso: str) -> tuple[list[dict], dict]:
+    """Merge fresh listings into the existing dict, stamping first/last seen.
+    Drop listings older than RETENTION_DAYS that weren't re-seen.
+    """
+    cutoff_iso = (datetime.now(timezone.utc) - timedelta(days=RETENTION_DAYS)).isoformat()
+    fresh_ids = {p["id"] for p in scraped if p.get("id")}
+    merged: dict[str, dict] = {}
+
+    new_count = 0
+    refreshed_count = 0
+    kept_count = 0
+    pruned_count = 0
+
+    # Carry forward existing listings, possibly refreshed
+    for pid, prev in existing.items():
+        if pid in fresh_ids:
+            continue  # will be handled in the scraped loop below
+        last_seen = prev.get("last_seen") or prev.get("first_seen")
+        if last_seen and last_seen < cutoff_iso:
+            pruned_count += 1
+            continue
+        merged[pid] = prev
+        kept_count += 1
+
+    # Apply scraped listings (new or refreshed)
+    for p in scraped:
+        pid = p.get("id")
+        if not pid:
+            continue
+        prev = existing.get(pid)
+        if prev:
+            entry = dict(p)
+            entry["first_seen"] = prev.get("first_seen") or now_iso
+            entry["last_seen"] = now_iso
+            refreshed_count += 1
+        else:
+            entry = dict(p)
+            entry["first_seen"] = now_iso
+            entry["last_seen"] = now_iso
+            new_count += 1
+        merged[pid] = entry
+
+    stats = {
+        "new": new_count,
+        "refreshed": refreshed_count,
+        "kept_archived": kept_count,
+        "pruned": pruned_count,
+    }
+    return list(merged.values()), stats
+
+
 def main() -> None:
-    properties, errors = scrape_all()
-    if not properties:
-        log.error("No properties scraped — refusing to overwrite blob with empty set")
+    existing = fetch_existing()
+
+    scraped, errors = scrape_all()
+    if not scraped:
+        log.error("No properties scraped — refusing to touch blob")
         if errors:
             log.error("Errors: %s", "; ".join(errors))
         sys.exit(2)
 
+    now_iso = datetime.now(timezone.utc).isoformat()
+    properties, stats = merge(existing, scraped, now_iso)
+    log.info("Merge: %d new, %d refreshed, %d kept (archived), %d pruned",
+             stats["new"], stats["refreshed"], stats["kept_archived"], stats["pruned"])
+
     payload = {
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": now_iso,
         "count": len(properties),
         "errors": errors,
+        "scrape_stats": stats,
         "properties": properties,
     }
 

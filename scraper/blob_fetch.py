@@ -38,10 +38,14 @@ def fetch_from_blob() -> tuple[list[Property] | None, str | None]:
     if not isinstance(raw, list):
         return None, "Blob payload missing 'properties' list"
 
+    # Stored payload may carry tracking metadata (first_seen/last_seen) that
+    # isn't part of the Property dataclass — strip before reconstituting.
+    extra_keys = {"first_seen", "last_seen"}
     properties: list[Property] = []
     for item in raw:
         try:
-            properties.append(Property(**item))
+            clean = {k: v for k, v in item.items() if k not in extra_keys}
+            properties.append(Property(**clean))
         except TypeError:
             continue
 
