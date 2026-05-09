@@ -44,6 +44,9 @@ class RatedProperty:
     property: Property
     rating: Optional[PropertyRating] = None
     rating_note: Optional[str] = None  # e.g. "Insufficient data for rating"
+    risk_score: int = 0  # 0–100
+    risk_flags: list = field(default_factory=list)  # list of flag keys
+    risk_labels: list = field(default_factory=list)  # human-readable strings
 
     def to_dict(self):
         d = self.property.to_dict()
@@ -52,6 +55,11 @@ class RatedProperty:
         else:
             d["rating"] = None
         d["rating_note"] = self.rating_note
+        d["risk"] = {
+            "score": self.risk_score,
+            "flags": list(self.risk_flags),
+            "labels": list(self.risk_labels),
+        }
         return d
 
 

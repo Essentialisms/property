@@ -249,6 +249,21 @@ function createPropertyCard(p) {
         noteHtml = `<div class="card-note">${escapeHtml(p.rating_note)}</div>`;
     }
 
+    // Risk warning
+    let riskHtml = "";
+    const risk = p.risk;
+    if (risk && risk.score >= 25) {
+        const sev = risk.score >= 60 ? "high" : "medium";
+        const heading = risk.score >= 60 ? "Likely scam or mispriced" : "Looks suspicious";
+        const items = (risk.labels || []).map(l => `<li>${escapeHtml(l)}</li>`).join("");
+        riskHtml = `
+            <div class="risk-warning risk-${sev}">
+                <div class="risk-heading">⚠ ${heading} (${risk.score}/100)</div>
+                <ul>${items}</ul>
+            </div>
+        `;
+    }
+
     card.innerHTML = `
         <div class="card-image">${imageHtml}</div>
         <div class="card-body">
@@ -268,6 +283,7 @@ function createPropertyCard(p) {
             </div>
             ${comparisonHtml}
             ${scoreBarsHtml}
+            ${riskHtml}
             ${noteHtml}
             <div class="card-footer">
                 ${rating ? `<span class="card-label ${labelClass}">${escapeHtml(rating.label)}</span>` : "<span></span>"}

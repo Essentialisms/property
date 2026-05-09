@@ -2,6 +2,7 @@
 
 from scraper.models import Property, PropertyRating, RatedProperty
 from analyzer.districts import get_district_data
+from analyzer.risk import evaluate as evaluate_risk, labels_for
 
 # Land prices per m2 are inherently lower than apartment/house prices.
 # These factors adjust the district average for fair comparison.
@@ -14,11 +15,21 @@ PROPERTY_TYPE_FACTORS = {
 
 def rate_property(prop: Property) -> RatedProperty:
     """Rate a single property listing."""
+    district_data = get_district_data(prop.district) if prop.district else None
+    district_avg_for_risk = (
+        district_data["avg_price_m2"] * PROPERTY_TYPE_FACTORS.get(prop.property_type, 1.0)
+        if district_data else None
+    )
+    risk_flags, risk_score = evaluate_risk(prop, district_avg_for_risk)
+
     if not prop.price or not prop.area_m2 or prop.area_m2 <= 0:
         return RatedProperty(
             property=prop,
             rating=None,
             rating_note="Insufficient data for rating (missing price or area)",
+            risk_score=risk_score,
+            risk_flags=risk_flags,
+            risk_labels=labels_for(risk_flags),
         )
 
     if not prop.district:
@@ -26,14 +37,19 @@ def rate_property(prop: Property) -> RatedProperty:
             property=prop,
             rating=None,
             rating_note="Unknown district — cannot rate",
+            risk_score=risk_score,
+            risk_flags=risk_flags,
+            risk_labels=labels_for(risk_flags),
         )
 
-    district_data = get_district_data(prop.district)
     if not district_data:
         return RatedProperty(
             property=prop,
             rating=None,
             rating_note=f"No reference data for district '{prop.district}'",
+            risk_score=risk_score,
+            risk_flags=risk_flags,
+            risk_labels=labels_for(risk_flags),
         )
 
     price_per_m2 = prop.price_per_m2 or (prop.price / prop.area_m2)
@@ -68,7 +84,13 @@ def rate_property(prop: Property) -> RatedProperty:
         district_tier=tier,
     )
 
-    return RatedProperty(property=prop, rating=rating)
+    return RatedProperty(
+        property=prop,
+        rating=rating,
+        risk_score=risk_score,
+        risk_flags=risk_flags,
+        risk_labels=labels_for(risk_flags),
+    )
 
 
 def rate_properties(properties: list[Property]) -> list[RatedProperty]:

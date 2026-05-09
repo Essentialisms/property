@@ -354,6 +354,34 @@ main {
     margin-top: 0.4rem;
     line-height: 1.35;
 }
+.risk-warning {
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+.risk-warning .risk-heading {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+.risk-warning ul {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+.risk-warning li {
+    margin: 0.1rem 0;
+}
+.risk-medium {
+    background: #fef3c7;
+    color: #78350f;
+    border: 1px solid #fcd34d;
+}
+.risk-high {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
 
 /* Card footer */
 .card-footer {
