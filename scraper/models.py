@@ -60,6 +60,8 @@ class SearchParams:
     budget: Optional[float] = None
     property_type: str = "land"  # "land", "apartment", "house", "all"
     districts: list = field(default_factory=list)  # empty = all
+    excluded_districts: list = field(default_factory=list)  # explicitly hidden
+    near: Optional[str] = None  # Ortsteil/Bezirk for proximity expansion
     min_size: Optional[float] = None
     max_size: Optional[float] = None
     sort_by: str = "deal_score"  # "deal_score", "growth_score", "price", "size"

@@ -62,11 +62,15 @@ Return ONLY a JSON object with these fields (omit fields that aren't mentioned):
 - budget: number (max price in EUR)
 - property_type: "land" | "apartment" | "house" | "all"
 - districts: array of district name strings (from the available list above)
+- excluded_districts: array of district names the user explicitly does NOT want
+- near: a single Ortsteil or Bezirk name when the user says "near X" / "around X" / "close to X" (e.g. "near Wannsee" → "Wannsee"). Set this INSTEAD OF districts when phrased as proximity, never both for the same location.
 - min_size: number (minimum area in m2)
 - max_size: number (maximum area in m2)
 - sort_by: "deal_score" | "growth_score" | "price" | "size"
 
 For sort_by, use "deal_score" if the user wants cheap/affordable/bargain/undervalued properties, "growth_score" if they want investment potential/up-and-coming areas, "price" for cheapest first, "size" for largest first.
+
+For excluded_districts: phrases like "not in Mitte", "anywhere except Spandau", "no Marzahn", "avoid Lichtenberg" should populate this list.
 
 If the user mentions "east" or "eastern" Berlin, map to eastern districts like Lichtenberg, Treptow-Koepenick, Marzahn-Hellersdorf, Friedrichshain.
 If they say "west" or "western", map to Charlottenburg, Spandau, Steglitz-Zehlendorf, Reinickendorf.
@@ -90,6 +94,8 @@ Return ONLY the JSON, no other text."""
         budget=data.get("budget"),
         property_type=data.get("property_type", "land"),
         districts=data.get("districts", []),
+        excluded_districts=data.get("excluded_districts", []),
+        near=data.get("near"),
         min_size=data.get("min_size"),
         max_size=data.get("max_size"),
         sort_by=data.get("sort_by", "deal_score"),

@@ -48,6 +48,12 @@ def api_search():
     raw_sub = data.get("subtypes") or ([] if not data.get("subtype") else [data["subtype"]])
     subtypes = [s for s in raw_sub if s]
 
+    # Structured fields can override / extend NL-parsed include + exclude lists.
+    if data.get("excluded_districts"):
+        params.excluded_districts = data["excluded_districts"]
+    if data.get("near"):
+        params.near = data["near"]
+
     # Cap pages in serverless environments (Vercel has 10s timeout on free tier)
     max_pages = min(params.max_pages, 2) if os.environ.get("VERCEL") else params.max_pages
 
@@ -57,6 +63,8 @@ def api_search():
         districts=params.districts if params.districts else None,
         max_pages=max_pages,
         subtypes=subtypes or None,
+        excluded_districts=params.excluded_districts or None,
+        near=params.near,
     )
 
     # Rate all properties

@@ -422,6 +422,50 @@ POSTCODE_TO_BEZIRK = {
 }
 
 
+# Adjacency graph for the 12 Berlin Bezirke. Used to expand "near X" filters
+# into the reference Bezirk plus its physical neighbors.
+BEZIRK_NEIGHBORS = {
+    "Mitte": ["Friedrichshain-Kreuzberg", "Pankow", "Charlottenburg-Wilmersdorf",
+              "Tempelhof-Schoeneberg", "Reinickendorf"],
+    "Friedrichshain-Kreuzberg": ["Mitte", "Pankow", "Lichtenberg",
+                                 "Treptow-Koepenick", "Neukoelln",
+                                 "Tempelhof-Schoeneberg"],
+    "Pankow": ["Mitte", "Friedrichshain-Kreuzberg", "Lichtenberg",
+               "Reinickendorf"],
+    "Charlottenburg-Wilmersdorf": ["Mitte", "Reinickendorf", "Spandau",
+                                   "Steglitz-Zehlendorf",
+                                   "Tempelhof-Schoeneberg"],
+    "Spandau": ["Charlottenburg-Wilmersdorf", "Reinickendorf",
+                "Steglitz-Zehlendorf"],
+    "Steglitz-Zehlendorf": ["Charlottenburg-Wilmersdorf",
+                             "Tempelhof-Schoeneberg", "Spandau", "Neukoelln"],
+    "Tempelhof-Schoeneberg": ["Mitte", "Friedrichshain-Kreuzberg",
+                               "Charlottenburg-Wilmersdorf",
+                               "Steglitz-Zehlendorf", "Neukoelln"],
+    "Neukoelln": ["Friedrichshain-Kreuzberg", "Tempelhof-Schoeneberg",
+                  "Steglitz-Zehlendorf", "Treptow-Koepenick"],
+    "Treptow-Koepenick": ["Friedrichshain-Kreuzberg", "Lichtenberg",
+                          "Marzahn-Hellersdorf", "Neukoelln"],
+    "Marzahn-Hellersdorf": ["Lichtenberg", "Treptow-Koepenick"],
+    "Lichtenberg": ["Friedrichshain-Kreuzberg", "Pankow",
+                    "Treptow-Koepenick", "Marzahn-Hellersdorf"],
+    "Reinickendorf": ["Mitte", "Pankow", "Charlottenburg-Wilmersdorf",
+                      "Spandau"],
+}
+
+
+def near_bezirke(reference: str) -> list[str]:
+    """Expand a 'near X' reference (Ortsteil, Bezirk, or postcode) to the set
+    of Bezirke that count as nearby — the reference's own Bezirk plus its
+    geographic neighbors. Returns [] if the reference can't be resolved.
+    """
+    bz = resolve_bezirk(reference if reference and reference.isdigit() else None,
+                        reference)
+    if not bz:
+        return []
+    return [bz] + BEZIRK_NEIGHBORS.get(bz, [])
+
+
 def resolve_bezirk(postcode: str | None, district: str | None) -> str | None:
     """Resolve a property's Bezirk from postcode (preferred) or district string.
     Returns one of the 12 modern Berlin Bezirke names, or None.

@@ -8,7 +8,7 @@ import requests
 from scraper.models import Property
 from scraper.parser import parse_search_results, parse_total_pages
 from scraper.blob_fetch import fetch_from_blob
-from analyzer.districts import identify_district, resolve_bezirk
+from analyzer.districts import identify_district, resolve_bezirk, near_bezirke
 from analyzer.house_types import classify_house
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,8 @@ def search_properties(
     districts: list[str] | None = None,
     max_pages: int = 5,
     subtypes: list[str] | None = None,
+    excluded_districts: list[str] | None = None,
+    near: str | None = None,
 ) -> tuple[list[Property], bool, str | None]:
     """Scrape ImmoScout24 for Berlin property listings.
 
@@ -72,9 +74,19 @@ def search_properties(
                 p.subtype = classify_house(p.title)
         if property_type and property_type != "all":
             all_properties = [p for p in all_properties if p.property_type == property_type]
-        if districts:
+
+        # "Near X" expands to X's Bezirk + its physical neighbors and is unioned
+        # with any explicit district filter.
+        include_filters = list(districts or [])
+        if near:
+            include_filters.extend(near_bezirke(near))
+        if include_filters:
             all_properties = [
-                p for p in all_properties if _district_matches(p, districts)
+                p for p in all_properties if _district_matches(p, include_filters)
+            ]
+        if excluded_districts:
+            all_properties = [
+                p for p in all_properties if not _district_matches(p, excluded_districts)
             ]
         if subtypes:
             wanted = set(subtypes)
