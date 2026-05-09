@@ -28,8 +28,9 @@ def parse_total_pages(html: str) -> int:
     data = _extract_search_json(soup)
     if data:
         try:
-            paging = data.get("searchResponseModel", data)
-            paging = _deep_get(paging, "resultlist.resultlist.paging")
+            search_model = data.get("searchResponseModel", data)
+            rl_outer = search_model.get("resultlist.resultlist") if isinstance(search_model, dict) else None
+            paging = rl_outer.get("paging") if isinstance(rl_outer, dict) else None
             if paging:
                 return paging.get("numberOfPages", 1)
         except (KeyError, TypeError, AttributeError):
@@ -48,35 +49,78 @@ def parse_total_pages(html: str) -> int:
     return 1
 
 
+def _balanced_json(text: str, start: int) -> str | None:
+    """Return the JSON object beginning at `start` (which must point at `{`)."""
+    if start < 0 or start >= len(text) or text[start] != "{":
+        return None
+    depth = 0
+    in_str = False
+    escape = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if in_str:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == '"':
+                in_str = False
+            continue
+        if c == '"':
+            in_str = True
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+    return None
+
+
 def _extract_search_json(soup: BeautifulSoup) -> dict | None:
     """Find and parse the embedded JSON search data from script tags."""
     for script in soup.find_all("script"):
         text = script.string or ""
-        # Look for the search response model
+
         if "searchResponseModel" in text or "resultlistEntries" in text:
-            # Try to extract JSON object
-            for pattern in [
-                r'keyValues\s*=\s*(\{.*?\});',
-                r'resultList\.resultListModel\s*=\s*(\{.*?\});',
-                r'IS24\.resultList\s*=\s*(\{.*?\});',
-            ]:
-                match = re.search(pattern, text, re.DOTALL)
-                if match:
-                    try:
-                        return json.loads(match.group(1))
-                    except json.JSONDecodeError:
-                        continue
+            # Modern format: `resultListModel: {"searchResponseModel": ...}`
+            for marker in ["resultListModel:", '"resultListModel":']:
+                idx = text.find(marker)
+                if idx >= 0:
+                    brace = text.find("{", idx + len(marker))
+                    blob = _balanced_json(text, brace)
+                    if blob:
+                        try:
+                            return json.loads(blob)
+                        except json.JSONDecodeError:
+                            pass
 
-            # Try to find any large JSON blob
-            json_matches = re.findall(r'(\{["\']searchResponseModel["\'].*?\})\s*;', text, re.DOTALL)
-            for m in json_matches:
-                try:
-                    return json.loads(m)
-                except json.JSONDecodeError:
-                    continue
+            # Direct searchResponseModel object
+            idx = text.find('"searchResponseModel"')
+            if idx >= 0:
+                # Walk back to the opening brace of the enclosing object
+                brace_idx = text.rfind("{", 0, idx)
+                if brace_idx >= 0:
+                    blob = _balanced_json(text, brace_idx)
+                    if blob:
+                        try:
+                            return json.loads(blob)
+                        except json.JSONDecodeError:
+                            pass
 
-        # Also try __NEXT_DATA__ for newer page versions
-        if "__NEXT_DATA__" in text or "props" in text:
+            # Legacy patterns kept as a fallback
+            for marker in ["IS24.resultList = ", "keyValues = "]:
+                idx = text.find(marker)
+                if idx >= 0:
+                    brace = text.find("{", idx + len(marker))
+                    blob = _balanced_json(text, brace)
+                    if blob:
+                        try:
+                            return json.loads(blob)
+                        except json.JSONDecodeError:
+                            pass
+
+        if "__NEXT_DATA__" in text:
             match = re.search(r'<script[^>]*id="__NEXT_DATA__"[^>]*>(\{.*?\})</script>', str(script), re.DOTALL)
             if match:
                 try:
@@ -94,9 +138,12 @@ def _parse_from_json(soup: BeautifulSoup) -> list[Property]:
         return []
 
     entries = []
-    # Navigate the JSON structure to find result entries
+    # Navigate the JSON structure to find result entries.
+    # Note: ImmoScout24 uses dotted keys like "resultlist.resultlist" as a
+    # *single* key, so we can't split on ".".
     search_model = data.get("searchResponseModel", data)
-    result_list = _deep_get(search_model, "resultlist.resultlist.resultlistEntries")
+    rl_outer = search_model.get("resultlist.resultlist") if isinstance(search_model, dict) else None
+    result_list = rl_outer.get("resultlistEntries") if isinstance(rl_outer, dict) else None
 
     if not result_list:
         result_list = _deep_get(data, "props.pageProps.searchResult.results")
@@ -177,17 +224,8 @@ def _entry_to_property(entry: dict) -> Property | None:
         expose_id = listing_id
         url = f"https://www.immobilienscout24.de/expose/{expose_id}"
 
-        # Image
-        title_picture = attrs.get("titlePicture", {})
-        image_url = None
-        if isinstance(title_picture, dict):
-            urls = title_picture.get("urls", [])
-            if isinstance(urls, list):
-                for u in urls:
-                    if isinstance(u, dict) and u.get("url"):
-                        image_url = u["url"][0].get("@href", "") if isinstance(u["url"], list) else str(u.get("url", ""))
-                        break
-            image_url = image_url or title_picture.get("@href", "")
+        # Image — modern ImmoScout24 format puts pictures in galleryAttachments
+        image_url = _extract_image_url(attrs)
 
         # Rooms
         rooms = attrs.get("numberOfRooms")
@@ -330,6 +368,40 @@ def _html_entry_to_property(el) -> Property | None:
         )
     except Exception:
         return None
+
+
+def _extract_image_url(attrs: dict) -> str | None:
+    """Pick the first non-floorplan picture URL from galleryAttachments and
+    fill in size placeholders.
+    """
+    gallery = attrs.get("galleryAttachments")
+    if not isinstance(gallery, dict):
+        return None
+    attachments = gallery.get("attachment")
+    if not isinstance(attachments, list):
+        return None
+    for att in attachments:
+        if not isinstance(att, dict):
+            continue
+        if str(att.get("floorplan", "false")).lower() == "true":
+            continue
+        urls = att.get("urls")
+        if not isinstance(urls, list):
+            continue
+        for u in urls:
+            if not isinstance(u, dict):
+                continue
+            url_obj = u.get("url")
+            href = None
+            if isinstance(url_obj, dict):
+                href = url_obj.get("@href")
+            elif isinstance(url_obj, list) and url_obj:
+                first = url_obj[0]
+                if isinstance(first, dict):
+                    href = first.get("@href")
+            if href:
+                return href.replace("%WIDTH%", "400").replace("%HEIGHT%", "300")
+    return None
 
 
 def _deep_get(d: dict, path: str):

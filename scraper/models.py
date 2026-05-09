@@ -31,6 +31,8 @@ class PropertyRating:
     label: str  # "Excellent Deal", etc.
     district_avg_price: Optional[float] = None
     price_vs_avg_pct: Optional[float] = None
+    district_growth_pct: Optional[float] = None  # YoY % e.g. 6.0
+    district_tier: Optional[str] = None  # emerging | budget | mid | high | premium
 
     def to_dict(self):
         return asdict(self)

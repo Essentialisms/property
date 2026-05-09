@@ -57,13 +57,6 @@ async function doSearch() {
     const minSize = document.getElementById("minSize").value;
     const sortBy = document.getElementById("sortBy").value;
 
-    if (!query && !budget) {
-        // At least need a query or budget
-        document.getElementById("nlQuery").focus();
-        document.getElementById("nlQuery").placeholder = "Enter a search query or set a budget in the filters below...";
-        return;
-    }
-
     showLoading(true);
     hideResults();
 
@@ -193,9 +186,26 @@ function createPropertyCard(p) {
         `;
     }
 
-    // Score bars
+    // Score bars + per-score explanations
     let scoreBarsHtml = "";
     if (rating) {
+        let dealWhy = "";
+        if (rating.price_vs_avg_pct != null) {
+            const diff = rating.price_vs_avg_pct - 100;
+            const where = diff <= 0
+                ? `${(-diff).toFixed(0)}% below district avg`
+                : `${diff.toFixed(0)}% above district avg`;
+            dealWhy = `<div class="score-why">Listed at ${where} (${formatEur(p.price_per_m2)}/m² vs ${formatEur(rating.district_avg_price)}/m²)</div>`;
+        }
+        let growthWhy = "";
+        if (rating.district_tier) {
+            const tier = rating.district_tier;
+            const growth = rating.district_growth_pct;
+            const tierBonus = { emerging: 20, budget: 15, mid: 5, high: 0, premium: -5 }[tier] ?? 0;
+            const sign = growth >= 0 ? "+" : "";
+            const bonusStr = tierBonus >= 0 ? `+${tierBonus}` : `${tierBonus}`;
+            growthWhy = `<div class="score-why">${tier} district, ${sign}${growth}%/yr → tier bonus ${bonusStr}</div>`;
+        }
         scoreBarsHtml = `
             <div class="score-bars">
                 <div class="score-bar">
@@ -206,6 +216,7 @@ function createPropertyCard(p) {
                     <div class="score-bar-track">
                         <div class="score-bar-fill" style="width:${rating.deal_score}%;background:${scoreColor(rating.deal_score)}"></div>
                     </div>
+                    ${dealWhy}
                 </div>
                 <div class="score-bar">
                     <div class="score-bar-label">
@@ -215,6 +226,7 @@ function createPropertyCard(p) {
                     <div class="score-bar-track">
                         <div class="score-bar-fill" style="width:${rating.growth_score}%;background:${scoreColor(rating.growth_score)}"></div>
                     </div>
+                    ${growthWhy}
                 </div>
             </div>
         `;

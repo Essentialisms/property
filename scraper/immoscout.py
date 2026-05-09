@@ -7,6 +7,7 @@ import logging
 import requests
 from scraper.models import Property
 from scraper.parser import parse_search_results, parse_total_pages
+from scraper.blob_fetch import fetch_from_blob
 from analyzer.districts import identify_district
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,24 @@ PROPERTY_TYPE_SLUGS = {
 BASE_URL = "https://www.immobilienscout24.de/Suche/de/berlin/berlin"
 
 
+def _district_matches(prop_district: str | None, filter_districts: list[str]) -> bool:
+    """Match property district against filter using either historical (Ortsteil)
+    or modern (Bezirk) names. e.g. 'Zehlendorf' matches 'Steglitz-Zehlendorf'.
+    """
+    if not prop_district:
+        return False
+    pd = prop_district.lower().strip()
+    pd_parts = {part.strip() for part in pd.split("-") if part.strip()}
+    for fd in filter_districts:
+        fd_low = fd.lower().strip()
+        if pd == fd_low:
+            return True
+        fd_parts = {part.strip() for part in fd_low.split("-") if part.strip()}
+        if pd_parts & fd_parts:
+            return True
+    return False
+
+
 def search_properties(
     property_type: str = "land",
     districts: list[str] | None = None,
@@ -39,6 +58,18 @@ def search_properties(
     Returns:
         (properties, is_demo_data, error_message)
     """
+    # Try the blob-cached dataset first (refreshed daily by scripts/refresh.py).
+    blob_props, blob_err = fetch_from_blob()
+    if blob_props is not None:
+        all_properties = blob_props
+        if property_type and property_type != "all":
+            all_properties = [p for p in all_properties if p.property_type == property_type]
+        if districts:
+            all_properties = [
+                p for p in all_properties if _district_matches(p.district, districts)
+            ]
+        return all_properties, False, None
+
     slug = PROPERTY_TYPE_SLUGS.get(property_type, PROPERTY_TYPE_SLUGS["land"])
     session = requests.Session()
     session.headers.update({
@@ -62,11 +93,11 @@ def search_properties(
         logger.info(f"Fetching {url}")
         resp = session.get(url, timeout=15)
 
-        if resp.status_code == 403:
-            logger.warning("Got 403 from ImmoScout24 — blocked")
+        if resp.status_code in (401, 403):
+            logger.warning(f"Got {resp.status_code} from ImmoScout24 — blocked")
             all_properties = get_demo_properties(property_type)
             is_demo = True
-            error = "ImmoScout24 blocked the request. Showing demo data."
+            error = "ImmoScout24 blocked the request (likely datacenter IP). Showing demo data."
         elif resp.status_code != 200:
             logger.warning(f"Got {resp.status_code} from ImmoScout24")
             all_properties = get_demo_properties(property_type)
@@ -110,11 +141,13 @@ def search_properties(
 
     # Filter by districts if specified
     if districts:
-        district_set = {d.lower() for d in districts}
-        all_properties = [
-            p for p in all_properties
-            if p.district and p.district.lower() in district_set
-        ]
+        filtered = [p for p in all_properties if _district_matches(p.district, districts)]
+        if is_demo and not filtered:
+            # Demo dataset is too small to cover every district — keep everything
+            note = f"No demo properties in {', '.join(districts)}; showing all available districts."
+            error = f"{error} {note}" if error else note
+        else:
+            all_properties = filtered
 
     return all_properties, is_demo, error
 

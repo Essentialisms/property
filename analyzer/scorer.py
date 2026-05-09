@@ -52,6 +52,9 @@ def rate_property(prop: Property) -> RatedProperty:
 
     price_vs_avg = round((price_per_m2 / adjusted_avg) * 100, 1) if adjusted_avg > 0 else None
 
+    growth_trend = district_data.get("growth_trend", 1.0)
+    tier = district_data.get("tier")
+
     rating = PropertyRating(
         deal_score=round(deal_score, 1),
         growth_score=round(growth_score, 1),
@@ -61,6 +64,8 @@ def rate_property(prop: Property) -> RatedProperty:
         label=label,
         district_avg_price=round(adjusted_avg, 2),
         price_vs_avg_pct=price_vs_avg,
+        district_growth_pct=round((growth_trend - 1.0) * 100, 1),
+        district_tier=tier,
     )
 
     return RatedProperty(property=prop, rating=rating)
