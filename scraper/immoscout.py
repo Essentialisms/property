@@ -139,15 +139,9 @@ def search_properties(
         is_demo = True
         error = "No listings found. Showing demo data."
 
-    # Filter by districts if specified
+    # Filter by districts if specified — empty result means empty result.
     if districts:
-        filtered = [p for p in all_properties if _district_matches(p.district, districts)]
-        if is_demo and not filtered:
-            # Demo dataset is too small to cover every district — keep everything
-            note = f"No demo properties in {', '.join(districts)}; showing all available districts."
-            error = f"{error} {note}" if error else note
-        else:
-            all_properties = filtered
+        all_properties = [p for p in all_properties if _district_matches(p.district, districts)]
 
     return all_properties, is_demo, error
 
