@@ -284,6 +284,7 @@ function createPropertyCard(p) {
                 ${(p.subtype || p.property_type) ? `<span class="detail-item"><span>${escapeHtml(subtypeLabel(p.subtype) || p.property_type)}</span></span>` : ""}
                 ${p.residence_type === "weekend" ? `<span class="detail-item residence-weekend">Weekend / vacation</span>` : ""}
             </div>
+            ${p.description ? `<div class="card-description">${escapeHtml(p.description.length > 220 ? p.description.slice(0, 220) + "…" : p.description)}</div>` : ""}
             ${comparisonHtml}
             ${scoreBarsHtml}
             ${riskHtml}

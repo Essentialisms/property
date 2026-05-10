@@ -130,6 +130,15 @@ def _card_to_property(card: Tag, property_type: str) -> Property | None:
         if image_url and image_url.startswith("data:"):
             image_url = None
 
+        # Description (snippet visible on the card). Trim to a reasonable length.
+        desc_el = card.select_one('[data-testid="cardmfe-description-text-test-id"]')
+        description = None
+        if desc_el:
+            text = desc_el.get_text(" ", strip=True)
+            text = re.sub(r"\s+", " ", text).strip()
+            if text:
+                description = text[:600]
+
         # District inference from address
         district = identify_district(address_clean, postcode)
 
@@ -146,6 +155,7 @@ def _card_to_property(card: Tag, property_type: str) -> Property | None:
             url=url,
             image_url=image_url,
             rooms=rooms,
+            description=description,
         )
     except Exception as e:
         logger.debug("card parse failed: %s", e)

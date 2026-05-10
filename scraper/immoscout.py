@@ -74,8 +74,9 @@ def search_properties(
         for p in all_properties:
             if p.property_type == "house" and not p.subtype:
                 p.subtype = classify_house(p.title)
-            if not p.residence_type:
-                p.residence_type = classify_residence(p.title)
+            # Always recompute residence — the classifier reads description too
+            # now and we want late-arriving descriptions to be picked up.
+            p.residence_type = classify_residence(p.title, p.description)
         if property_type and property_type != "all":
             all_properties = [p for p in all_properties if p.property_type == property_type]
 

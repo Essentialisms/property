@@ -18,6 +18,7 @@ class Property:
     rooms: Optional[float] = None
     subtype: Optional[str] = None  # detached / semi_detached / townhouse / villa / bungalow / multi_family
     residence_type: Optional[str] = None  # 'permanent' | 'weekend'
+    description: Optional[str] = None  # short snippet visible on the listing card
 
     def to_dict(self):
         return asdict(self)

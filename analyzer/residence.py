@@ -36,12 +36,14 @@ WEEKEND_MARKERS = (
 )
 
 
-def classify_residence(title: str | None) -> str:
-    """Return 'weekend' if a weekend/vacation marker is present, else 'permanent'."""
-    if not title:
+def classify_residence(title: str | None, description: str | None = None) -> str:
+    """Return 'weekend' if a weekend/vacation marker is present in title or
+    description, else 'permanent'.
+    """
+    haystack = " ".join(part.lower() for part in (title, description) if part)
+    if not haystack:
         return "permanent"
-    t = title.lower()
     for marker in WEEKEND_MARKERS:
-        if marker in t:
+        if marker in haystack:
             return "weekend"
     return "permanent"

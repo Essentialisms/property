@@ -389,6 +389,12 @@ main {
     padding: 0.05rem 0.5rem !important;
     font-size: 0.72rem;
 }
+.card-description {
+    margin-top: 0.5rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
 
 /* Card footer */
 .card-footer {
