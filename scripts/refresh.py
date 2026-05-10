@@ -30,6 +30,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scraper.browser_fetch import fetch_html  # noqa: E402
 from scraper.parser import parse_search_results, parse_total_pages  # noqa: E402
 from scraper import immowelt as iw  # noqa: E402
+from scraper import kleinanzeigen as ka  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -107,29 +108,59 @@ def scrape_all() -> tuple[list[dict], list[str]]:
                 extra_urls.append(page_url)
                 extra_meta[page_url] = ("iw", prop_type)
 
-    if not extra_urls:
-        return list(seen.values()), errors
+    if extra_urls:
+        log.info("Phase 2: fetching %d additional pages", len(extra_urls))
+        extra_html = fetch_html(extra_urls)
 
-    log.info("Phase 2: fetching %d additional pages", len(extra_urls))
-    extra_html = fetch_html(extra_urls)
+        for url, (source, prop_type) in extra_meta.items():
+            html = extra_html.get(url, "")
+            if not html:
+                errors.append(f"{source}/{prop_type}: empty response on {url}")
+                continue
+            if source == "is24":
+                props = parse_search_results(html)
+                for p in props:
+                    p.property_type = prop_type
+                    seen[p.id] = p.to_dict()
+                log.info("  is24/%s %s: %d", prop_type, url.rsplit("=", 1)[-1], len(props))
+            else:
+                props = iw.parse_listings(html, prop_type)
+                for p in props:
+                    seen[p.id] = p.to_dict()
+                page_n = url.rsplit("page=", 1)[-1] if "page=" in url else "?"
+                log.info("  iw/%s page=%s: %d", prop_type, page_n, len(props))
 
-    for url, (source, prop_type) in extra_meta.items():
-        html = extra_html.get(url, "")
+    # Phase 3 — Kleinanzeigen via plain HTTP (no bot protection, ~0.5s per page).
+    log.info("Phase 3: Kleinanzeigen")
+    ka_page1_urls = [ka.url_for(t, 1) for t in ka.PROPERTY_TYPES]
+    ka_html_p1 = ka.fetch_pages(ka_page1_urls)
+    ka_extra_urls: list[str] = []
+    ka_extra_meta: dict[str, str] = {}
+    for prop_type, page1_url in zip(ka.PROPERTY_TYPES, ka_page1_urls):
+        html = ka_html_p1.get(page1_url, "")
         if not html:
-            errors.append(f"{source}/{prop_type}: empty response on {url}")
+            errors.append(f"ka/{prop_type}: empty response on page 1")
             continue
-        if source == "is24":
-            props = parse_search_results(html)
+        props = ka.parse_listings(html, prop_type)
+        log.info("  ka/%s page 1: %d", prop_type, len(props))
+        for p in props:
+            seen[p.id] = p.to_dict()
+        total = min(ka.parse_total_pages(html), MAX_PAGES_PER_TYPE)
+        for page in range(2, total + 1):
+            u = ka.url_for(prop_type, page)
+            ka_extra_urls.append(u)
+            ka_extra_meta[u] = prop_type
+    if ka_extra_urls:
+        ka_html_extra = ka.fetch_pages(ka_extra_urls)
+        for url, prop_type in ka_extra_meta.items():
+            html = ka_html_extra.get(url, "")
+            if not html:
+                continue
+            props = ka.parse_listings(html, prop_type)
             for p in props:
-                p.property_type = prop_type
                 seen[p.id] = p.to_dict()
-            log.info("  is24/%s %s: %d", prop_type, url.rsplit("=", 1)[-1], len(props))
-        else:
-            props = iw.parse_listings(html, prop_type)
-            for p in props:
-                seen[p.id] = p.to_dict()
-            page_n = url.rsplit("page=", 1)[-1] if "page=" in url else "?"
-            log.info("  iw/%s page=%s: %d", prop_type, page_n, len(props))
+            page_n = url.rsplit("seite:", 1)[-1].split("/")[0] if "seite:" in url else "?"
+            log.info("  ka/%s page=%s: %d", prop_type, page_n, len(props))
 
     return list(seen.values()), errors
 
