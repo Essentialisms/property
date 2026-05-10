@@ -29,14 +29,34 @@ async function loadDistricts() {
         const data = await resp.json();
         aiModeAvailable = data.ai_mode;
 
-        // Populate district dropdown
+        // Populate district dropdown — split into Bezirke and Ortsteile so
+        // users see the hierarchy (e.g. Wedding sits inside Mitte Bezirk).
         const select = document.getElementById("district");
-        data.districts.forEach((d) => {
-            const opt = document.createElement("option");
-            opt.value = d.name;
-            opt.textContent = `${d.name} (${formatEur(d.avg_price_m2)}/m²)`;
-            select.appendChild(opt);
-        });
+        const bezirke = data.districts.filter(d => d.kind !== "ortsteil");
+        const ortsteile = data.districts.filter(d => d.kind === "ortsteil");
+        if (bezirke.length) {
+            const grp = document.createElement("optgroup");
+            grp.label = "Bezirke (whole borough)";
+            bezirke.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d.name;
+                opt.textContent = `${d.name} (${formatEur(d.avg_price_m2)}/m²)`;
+                grp.appendChild(opt);
+            });
+            select.appendChild(grp);
+        }
+        if (ortsteile.length) {
+            const grp = document.createElement("optgroup");
+            grp.label = "Ortsteile (single neighborhood)";
+            ortsteile.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d.name;
+                const parent = d.parent ? ` — in ${d.parent}` : "";
+                opt.textContent = `${d.name}${parent}`;
+                grp.appendChild(opt);
+            });
+            select.appendChild(grp);
+        }
 
         // Populate reference table
         const tbody = document.getElementById("districtTableBody");
@@ -274,7 +294,7 @@ function createPropertyCard(p) {
             <div class="card-header">
                 <div>
                     <div class="card-title">${escapeHtml(p.title)}</div>
-                    <div class="card-address">${escapeHtml(p.address)}${p.district ? ` — ${escapeHtml(p.district)}` : ""}</div>
+                    <div class="card-address">${escapeHtml(p.address)}${(p.bezirk || p.ortsteil) ? ` — ${escapeHtml([p.ortsteil, p.bezirk].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(", "))}` : (p.district ? ` — ${escapeHtml(p.district)}` : "")}</div>
                 </div>
                 ${rating ? `<div class="grade-badge ${gradeClass}">${grade}</div>` : ""}
             </div>

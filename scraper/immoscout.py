@@ -96,6 +96,12 @@ def search_properties(
             # picked up without rebuilding the blob.
             p.residence_type = classify_residence(p.title, p.description)
             p.construction_status = classify_construction(p.title, p.description)
+            # Resolve geography for display + filtering
+            p.bezirk = resolve_bezirk(p.postcode, p.district)
+            ortsteil = POSTCODE_TO_DISTRICT.get((p.postcode or "").strip())
+            if not ortsteil and p.district and p.district not in _BEZIRK_NAMES:
+                ortsteil = p.district
+            p.ortsteil = ortsteil
         if property_type and property_type != "all":
             all_properties = [p for p in all_properties if p.property_type == property_type]
 

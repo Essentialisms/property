@@ -20,6 +20,8 @@ class Property:
     residence_type: Optional[str] = None  # 'permanent' | 'weekend'
     description: Optional[str] = None  # short snippet visible on the listing card
     construction_status: Optional[str] = None  # 'existing' | 'new_build' | 'to_build'
+    bezirk: Optional[str] = None  # resolved official Berlin Bezirk
+    ortsteil: Optional[str] = None  # resolved smaller neighborhood when known
 
     def to_dict(self):
         return asdict(self)

@@ -532,26 +532,58 @@ def get_all_district_names() -> list[str]:
 
 
 def get_districts_summary() -> list[dict]:
-    """Return district data for the frontend reference table."""
-    seen = set()
-    result = []
-    # Show the main 12 administrative districts + key neighborhoods
-    priority_names = [
+    """Return district data for the frontend reference table + dropdown.
+
+    Each entry has a 'kind' field — 'bezirk' for the 12 official boroughs,
+    'ortsteil' for sub-neighborhoods. The frontend uses this to render a
+    grouped dropdown so users can tell apart 'Mitte (Bezirk, includes
+    Wedding)' from 'Wedding (Ortsteil in Mitte)'.
+    """
+    bezirke = [
         "Mitte", "Friedrichshain-Kreuzberg", "Pankow",
         "Charlottenburg-Wilmersdorf", "Spandau", "Steglitz-Zehlendorf",
         "Tempelhof-Schoeneberg", "Neukoelln", "Treptow-Koepenick",
         "Marzahn-Hellersdorf", "Lichtenberg", "Reinickendorf",
-        "Prenzlauer Berg", "Kreuzberg", "Friedrichshain",
-        "Wedding", "Moabit",
     ]
-    for name in priority_names:
-        if name in BERLIN_DISTRICTS and name not in seen:
-            seen.add(name)
-            data = BERLIN_DISTRICTS[name]
-            result.append({
-                "name": name,
-                "avg_price_m2": data["avg_price_m2"],
-                "growth_pct": round((data["growth_trend"] - 1) * 100, 1),
-                "tier": data["tier"],
-            })
-    return result
+    ortsteile = [
+        ("Prenzlauer Berg", "Pankow"),
+        ("Friedrichshain", "Friedrichshain-Kreuzberg"),
+        ("Kreuzberg", "Friedrichshain-Kreuzberg"),
+        ("Wedding", "Mitte"),
+        ("Moabit", "Mitte"),
+        ("Charlottenburg", "Charlottenburg-Wilmersdorf"),
+        ("Wilmersdorf", "Charlottenburg-Wilmersdorf"),
+        ("Schoeneberg", "Tempelhof-Schoeneberg"),
+        ("Tempelhof", "Tempelhof-Schoeneberg"),
+        ("Steglitz", "Steglitz-Zehlendorf"),
+        ("Zehlendorf", "Steglitz-Zehlendorf"),
+        ("Treptow", "Treptow-Koepenick"),
+        ("Koepenick", "Treptow-Koepenick"),
+        ("Marzahn", "Marzahn-Hellersdorf"),
+    ]
+    out = []
+    for name in bezirke:
+        data = BERLIN_DISTRICTS.get(name)
+        if not data:
+            continue
+        out.append({
+            "name": name,
+            "kind": "bezirk",
+            "parent": None,
+            "avg_price_m2": data["avg_price_m2"],
+            "growth_pct": round((data["growth_trend"] - 1) * 100, 1),
+            "tier": data["tier"],
+        })
+    for name, parent in ortsteile:
+        data = BERLIN_DISTRICTS.get(name)
+        if not data:
+            continue
+        out.append({
+            "name": name,
+            "kind": "ortsteil",
+            "parent": parent,
+            "avg_price_m2": data["avg_price_m2"],
+            "growth_pct": round((data["growth_trend"] - 1) * 100, 1),
+            "tier": data["tier"],
+        })
+    return out
