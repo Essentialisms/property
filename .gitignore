@@ -1,7 +1,8 @@
 __pycache__/
+.DS_Store
+.env
+.env*.local
+.vercel
 *.pyc
 *.pyo
-.env
-.vercel
-.env*.local
 scripts/*.log
