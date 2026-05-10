@@ -71,7 +71,8 @@ class RatedProperty:
 @dataclass
 class SearchParams:
     budget: Optional[float] = None
-    property_type: str = "land"  # "land", "apartment", "house", "all"
+    property_type: str = "all"  # "land", "apartment", "house", "all"
+    property_types: list = field(default_factory=list)  # for multi-select; takes precedence when non-empty
     districts: list = field(default_factory=list)  # empty = all
     excluded_districts: list = field(default_factory=list)  # explicitly hidden
     near: Optional[str] = None  # Ortsteil/Bezirk for proximity expansion

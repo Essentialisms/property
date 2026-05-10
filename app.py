@@ -33,12 +33,15 @@ def api_search():
         # Allow structured fields to override NL-parsed values
         if data.get("budget"):
             params.budget = float(data["budget"])
-        if data.get("property_type") and data["property_type"] != "all":
+        if data.get("property_types"):
+            params.property_types = [t for t in data["property_types"] if t]
+        elif data.get("property_type") and data["property_type"] != "all":
             params.property_type = data["property_type"]
     else:
         params = SearchParams(
             budget=float(data["budget"]) if data.get("budget") else None,
-            property_type=data.get("property_type", "land"),
+            property_type=data.get("property_type", "all"),
+            property_types=[t for t in (data.get("property_types") or []) if t],
             districts=data.get("districts", []),
             min_size=float(data["min_size"]) if data.get("min_size") else None,
             sort_by=data.get("sort_by", "deal_score"),
@@ -70,6 +73,7 @@ def api_search():
     # Fetch properties
     properties, is_demo, error = search_properties(
         property_type=params.property_type,
+        property_types=params.property_types or None,
         districts=params.districts if params.districts else None,
         max_pages=max_pages,
         subtypes=subtypes or None,

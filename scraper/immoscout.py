@@ -69,7 +69,7 @@ def _district_matches(prop: Property, filter_districts: list[str]) -> bool:
 
 
 def search_properties(
-    property_type: str = "land",
+    property_type: str = "all",
     districts: list[str] | None = None,
     max_pages: int = 5,
     subtypes: list[str] | None = None,
@@ -77,6 +77,7 @@ def search_properties(
     near: str | None = None,
     residence_type: str | None = None,
     construction_status: str | None = None,
+    property_types: list[str] | None = None,
 ) -> tuple[list[Property], bool, str | None]:
     """Scrape ImmoScout24 for Berlin property listings.
 
@@ -102,8 +103,15 @@ def search_properties(
             if not ortsteil and p.district and p.district not in _BEZIRK_NAMES:
                 ortsteil = p.district
             p.ortsteil = ortsteil
-        if property_type and property_type != "all":
-            all_properties = [p for p in all_properties if p.property_type == property_type]
+        # Resolve effective set of property types to keep. Multi-select wins
+        # over the legacy single field; "all" or empty means no filter.
+        types_filter: set[str] | None = None
+        if property_types:
+            types_filter = {t for t in property_types if t and t != "all"}
+        elif property_type and property_type != "all":
+            types_filter = {property_type}
+        if types_filter:
+            all_properties = [p for p in all_properties if p.property_type in types_filter]
 
         # "Near X" expands to X's Bezirk + its physical neighbors and is unioned
         # with any explicit district filter.

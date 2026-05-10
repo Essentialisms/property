@@ -37,18 +37,16 @@
                         <input type="number" id="budget" placeholder="e.g. 300000" min="0" step="10000">
                     </div>
                     <div class="filter-group">
-                        <label for="propertyType">Property Type</label>
-                        <select id="propertyType">
+                        <label for="propertyType">Property Type (cmd/ctrl-click for multiple)</label>
+                        <select id="propertyType" multiple size="3">
                             <option value="land">Land / Grundstück</option>
                             <option value="apartment">Apartment / Wohnung</option>
                             <option value="house">House / Haus</option>
-                            <option value="all">All Types</option>
                         </select>
                     </div>
                     <div class="filter-group" id="houseSubtypeGroup" style="display:none;">
-                        <label for="houseSubtype">House Subtype</label>
-                        <select id="houseSubtype">
-                            <option value="">Any</option>
+                        <label for="houseSubtype">House Subtype (cmd/ctrl-click for multiple)</label>
+                        <select id="houseSubtype" multiple size="4">
                             <option value="detached">Single-family (Einfamilienhaus)</option>
                             <option value="semi_detached">Semi-detached (Doppelhaushälfte)</option>
                             <option value="townhouse">Townhouse (Reihenhaus)</option>
@@ -58,10 +56,8 @@
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label for="district">District</label>
-                        <select id="district">
-                            <option value="">All Districts</option>
-                        </select>
+                        <label for="district">District (cmd/ctrl-click for multiple)</label>
+                        <select id="district" multiple size="4"></select>
                     </div>
                     <div class="filter-group">
                         <label for="excludedDistricts">Exclude (cmd/ctrl-click for multiple)</label>

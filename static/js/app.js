@@ -12,11 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Enter") doSearch();
     });
 
-    // Show house subtype filter only when property type is house
+    // Show house subtype filter only when "house" is among the selected types
     const propertyType = document.getElementById("propertyType");
     const subtypeGroup = document.getElementById("houseSubtypeGroup");
     const updateSubtypeVisibility = () => {
-        subtypeGroup.style.display = propertyType.value === "house" ? "" : "none";
+        const selected = Array.from(propertyType.selectedOptions).map(o => o.value);
+        const showSubtype = selected.includes("house") || selected.length === 0;
+        subtypeGroup.style.display = showSubtype ? "" : "none";
     };
     propertyType.addEventListener("change", updateSubtypeVisibility);
     updateSubtypeVisibility();
@@ -96,11 +98,11 @@ async function loadDistricts() {
 async function doSearch() {
     const query = document.getElementById("nlQuery").value.trim();
     const budget = document.getElementById("budget").value;
-    const propertyType = document.getElementById("propertyType").value;
-    const district = document.getElementById("district").value;
+    const propertyTypes = Array.from(document.getElementById("propertyType").selectedOptions).map(o => o.value).filter(Boolean);
+    const districts = Array.from(document.getElementById("district").selectedOptions).map(o => o.value).filter(Boolean);
     const minSize = document.getElementById("minSize").value;
     const sortBy = document.getElementById("sortBy").value;
-    const houseSubtype = document.getElementById("houseSubtype")?.value;
+    const houseSubtypes = Array.from(document.getElementById("houseSubtype")?.selectedOptions || []).map(o => o.value).filter(Boolean);
     const residenceType = document.getElementById("residenceType")?.value;
     const constructionStatus = document.getElementById("constructionStatus")?.value;
     const excludedDistricts = Array.from(document.getElementById("excludedDistricts")?.selectedOptions || []).map(o => o.value).filter(Boolean);
@@ -110,12 +112,13 @@ async function doSearch() {
 
     const body = { query };
     if (budget) body.budget = parseFloat(budget);
-    if (propertyType) body.property_type = propertyType;
-    if (district) body.districts = [district];
+    if (propertyTypes.length === 1) body.property_type = propertyTypes[0];
+    else if (propertyTypes.length > 1) body.property_types = propertyTypes;
+    if (districts.length) body.districts = districts;
     if (excludedDistricts.length) body.excluded_districts = excludedDistricts;
     if (minSize) body.min_size = parseFloat(minSize);
     if (sortBy) body.sort_by = sortBy;
-    if (propertyType === "house" && houseSubtype) body.subtype = houseSubtype;
+    if (propertyTypes.includes("house") && houseSubtypes.length) body.subtypes = houseSubtypes;
     if (residenceType) body.residence_type = residenceType;
     if (constructionStatus) body.construction_status = constructionStatus;
 
