@@ -64,7 +64,10 @@ def rate_property(prop: Property) -> RatedProperty:
 
     grade = _score_to_grade(combined)
     stars = max(1, min(5, round(combined / 20)))
-    label = _grade_label(grade)
+    # The text label describes the *price* (cheap vs. overpriced), so it's
+    # derived from deal_score alone. The letter grade and stars combine
+    # deal + growth and are the right place to express overall pickiness.
+    label = _grade_label(_score_to_grade(deal_score))
 
     price_vs_avg = round((price_per_m2 / adjusted_avg) * 100, 1) if adjusted_avg > 0 else None
 
