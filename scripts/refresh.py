@@ -44,7 +44,7 @@ IS24_SLUGS = {
     "house": "haus-kaufen",
 }
 PROPERTY_TYPES = ("land", "apartment", "house")
-MAX_PAGES_PER_TYPE = 50  # per source per type
+MAX_PAGES_PER_TYPE = 100  # per source per type (capped by what each source actually paginates)
 BLOB_PATHNAME = "properties.json"
 BLOB_PUBLIC_URL = "https://5dxkyfjiib2tfjbl.public.blob.vercel-storage.com/properties.json"
 RETENTION_DAYS = 60  # drop listings not seen in this many days
