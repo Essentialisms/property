@@ -139,6 +139,10 @@ function renderResults(data) {
         if (pp.budget) tags.push(`Budget: ${formatEur(pp.budget)}`);
         if (pp.property_type && pp.property_type !== "all") tags.push(`Type: ${pp.property_type}`);
         if (pp.districts && pp.districts.length) tags.push(`Districts: ${pp.districts.join(", ")}`);
+        if (pp.excluded_districts && pp.excluded_districts.length) tags.push(`Excluding: ${pp.excluded_districts.join(", ")}`);
+        if (pp.near) tags.push(`Near ${pp.near} (incl. neighboring boroughs)`);
+        if (pp.residence_type) tags.push(`Residence: ${pp.residence_type}`);
+        if (pp.construction_status) tags.push(`Build: ${pp.construction_status.replace("_", " ")}`);
         if (pp.min_size) tags.push(`Min size: ${pp.min_size} m²`);
         if (pp.sort_by) tags.push(`Sort: ${pp.sort_by.replace("_", " ")}`);
 
