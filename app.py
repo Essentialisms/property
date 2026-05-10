@@ -49,6 +49,12 @@ def api_search():
     subtypes = [s for s in raw_sub if s]
 
     # Structured fields can override / extend NL-parsed include + exclude lists.
+    # An explicit district pick from the dropdown is authoritative — it
+    # overrides any NL-parsed districts AND clears any 'near' proximity
+    # expansion so the user's strict UI choice isn't silently widened.
+    if data.get("districts"):
+        params.districts = data["districts"]
+        params.near = None
     if data.get("excluded_districts"):
         params.excluded_districts = data["excluded_districts"]
     if data.get("near"):
