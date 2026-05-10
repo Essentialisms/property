@@ -8,9 +8,18 @@ import requests
 from scraper.models import Property
 from scraper.parser import parse_search_results, parse_total_pages
 from scraper.blob_fetch import fetch_from_blob
-from analyzer.districts import identify_district, resolve_bezirk, near_bezirke
+from analyzer.districts import (
+    BEZIRK_NEIGHBORS,
+    POSTCODE_TO_DISTRICT,
+    identify_district,
+    near_bezirke,
+    resolve_bezirk,
+)
 from analyzer.house_types import classify_house
 from analyzer.residence import classify_residence
+from analyzer.construction import classify_construction
+
+_BEZIRK_NAMES = set(BEZIRK_NEIGHBORS.keys())
 
 logger = logging.getLogger(__name__)
 
@@ -33,23 +42,30 @@ BASE_URL = "https://www.immobilienscout24.de/Suche/de/berlin/berlin"
 
 
 def _district_matches(prop: Property, filter_districts: list[str]) -> bool:
-    """Match a property to a filter using Bezirk geography.
+    """Match a property to a filter, distinguishing Bezirk from Ortsteil.
 
-    A property's Bezirk is resolved from its postcode (preferred) or district
-    string. The filter is normalised the same way. The match is a Bezirk-set
-    intersection — so 'Zehlendorf' (Ortsteil) and 'Steglitz-Zehlendorf'
-    (Bezirk) both resolve to Steglitz-Zehlendorf and match each other,
-    regardless of how the listing's `district` field happens to be spelled.
+    Picking a Bezirk (e.g. 'Mitte', 'Steglitz-Zehlendorf') matches every
+    listing geographically inside that Bezirk. Picking an Ortsteil (e.g.
+    'Wedding', 'Schmargendorf', 'Friedrichshain') narrows to just that
+    Ortsteil. Names that are both — Mitte, Pankow, Spandau, Neukölln,
+    Lichtenberg, Reinickendorf — default to the Bezirk interpretation.
     """
     prop_bezirk = resolve_bezirk(prop.postcode, prop.district)
-    if not prop_bezirk:
-        return False
-    accepted = set()
+    prop_ortsteil = None
+    if prop.postcode:
+        prop_ortsteil = POSTCODE_TO_DISTRICT.get(prop.postcode.strip())
+    if not prop_ortsteil and prop.district and prop.district not in _BEZIRK_NAMES:
+        prop_ortsteil = prop.district
+    prop_ortsteil_low = prop_ortsteil.lower() if prop_ortsteil else None
+
     for fd in filter_districts:
-        bz = resolve_bezirk(None, fd)
-        if bz:
-            accepted.add(bz)
-    return prop_bezirk in accepted
+        if fd in _BEZIRK_NAMES:
+            if prop_bezirk == fd:
+                return True
+        else:
+            if prop_ortsteil_low and prop_ortsteil_low == fd.lower():
+                return True
+    return False
 
 
 def search_properties(
@@ -60,6 +76,7 @@ def search_properties(
     excluded_districts: list[str] | None = None,
     near: str | None = None,
     residence_type: str | None = None,
+    construction_status: str | None = None,
 ) -> tuple[list[Property], bool, str | None]:
     """Scrape ImmoScout24 for Berlin property listings.
 
@@ -74,9 +91,11 @@ def search_properties(
         for p in all_properties:
             if p.property_type == "house" and not p.subtype:
                 p.subtype = classify_house(p.title)
-            # Always recompute residence — the classifier reads description too
-            # now and we want late-arriving descriptions to be picked up.
+            # Always recompute residence + construction — the classifiers read
+            # description too now and we want late-arriving descriptions to be
+            # picked up without rebuilding the blob.
             p.residence_type = classify_residence(p.title, p.description)
+            p.construction_status = classify_construction(p.title, p.description)
         if property_type and property_type != "all":
             all_properties = [p for p in all_properties if p.property_type == property_type]
 
@@ -98,6 +117,8 @@ def search_properties(
             all_properties = [p for p in all_properties if p.subtype in wanted]
         if residence_type in ("permanent", "weekend"):
             all_properties = [p for p in all_properties if p.residence_type == residence_type]
+        if construction_status in ("existing", "new_build", "to_build"):
+            all_properties = [p for p in all_properties if p.construction_status == construction_status]
         return all_properties, False, None
 
     slug = PROPERTY_TYPE_SLUGS.get(property_type, PROPERTY_TYPE_SLUGS["land"])

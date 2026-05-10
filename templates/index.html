@@ -76,6 +76,15 @@
                         </select>
                     </div>
                     <div class="filter-group">
+                        <label for="constructionStatus">Build status</label>
+                        <select id="constructionStatus">
+                            <option value="">Any</option>
+                            <option value="existing">Already built</option>
+                            <option value="new_build">New build (Erstbezug)</option>
+                            <option value="to_build">Still to be built (Neubauprojekt)</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
                         <label for="sortBy">Sort By</label>
                         <select id="sortBy">
                             <option value="deal_score">Best Deal</option>

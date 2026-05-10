@@ -67,6 +67,7 @@ Return ONLY a JSON object with these fields (omit fields that aren't mentioned):
 - min_size: number (minimum area in m2)
 - max_size: number (maximum area in m2)
 - residence_type: "permanent" if user wants somewhere they can register as Hauptwohnsitz / live year-round / not a vacation home; "weekend" if they explicitly want a weekend / vacation / Datsche / Ferienhaus / Erholungsgrundstück; omit if no preference.
+- construction_status: "existing" if user wants an already-built / standing house / Bestandsimmobilie / Altbau; "new_build" if they want freshly built / Neubau / Erstbezug; "to_build" if they want a project that's still under construction / planned / Neubauprojekt / Bauträger / schlüsselfertig / off-plan; omit if no preference.
 - sort_by: "deal_score" | "growth_score" | "price" | "size"
 
 For sort_by, use "deal_score" if the user wants cheap/affordable/bargain/undervalued properties, "growth_score" if they want investment potential/up-and-coming areas, "price" for cheapest first, "size" for largest first.
@@ -94,6 +95,9 @@ Return ONLY the JSON, no other text."""
     rt = data.get("residence_type")
     if rt not in ("permanent", "weekend"):
         rt = None
+    cs = data.get("construction_status")
+    if cs not in ("existing", "new_build", "to_build"):
+        cs = None
     return SearchParams(
         budget=data.get("budget"),
         property_type=data.get("property_type", "land"),
@@ -104,4 +108,5 @@ Return ONLY the JSON, no other text."""
         max_size=data.get("max_size"),
         sort_by=data.get("sort_by", "deal_score"),
         residence_type=rt,
+        construction_status=cs,
     )

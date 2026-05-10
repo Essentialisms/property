@@ -19,6 +19,7 @@ class Property:
     subtype: Optional[str] = None  # detached / semi_detached / townhouse / villa / bungalow / multi_family
     residence_type: Optional[str] = None  # 'permanent' | 'weekend'
     description: Optional[str] = None  # short snippet visible on the listing card
+    construction_status: Optional[str] = None  # 'existing' | 'new_build' | 'to_build'
 
     def to_dict(self):
         return asdict(self)
@@ -76,6 +77,7 @@ class SearchParams:
     max_size: Optional[float] = None
     sort_by: str = "deal_score"  # "deal_score", "growth_score", "price", "size"
     residence_type: Optional[str] = None  # 'permanent' | 'weekend' | None
+    construction_status: Optional[str] = None  # 'existing' | 'new_build' | 'to_build' | None
     max_pages: int = 5
 
     def to_dict(self):

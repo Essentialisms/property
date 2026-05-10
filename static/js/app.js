@@ -67,6 +67,7 @@ async function doSearch() {
     const sortBy = document.getElementById("sortBy").value;
     const houseSubtype = document.getElementById("houseSubtype")?.value;
     const residenceType = document.getElementById("residenceType")?.value;
+    const constructionStatus = document.getElementById("constructionStatus")?.value;
 
     showLoading(true);
     hideResults();
@@ -79,6 +80,7 @@ async function doSearch() {
     if (sortBy) body.sort_by = sortBy;
     if (propertyType === "house" && houseSubtype) body.subtype = houseSubtype;
     if (residenceType) body.residence_type = residenceType;
+    if (constructionStatus) body.construction_status = constructionStatus;
 
     try {
         const resp = await fetch("/api/search", {
@@ -283,6 +285,8 @@ function createPropertyCard(p) {
                 ${p.rooms != null ? `<span class="detail-item"><strong>${p.rooms}</strong> <span>rooms</span></span>` : ""}
                 ${(p.subtype || p.property_type) ? `<span class="detail-item"><span>${escapeHtml(subtypeLabel(p.subtype) || p.property_type)}</span></span>` : ""}
                 ${p.residence_type === "weekend" ? `<span class="detail-item residence-weekend">Weekend / vacation</span>` : ""}
+                ${p.construction_status === "to_build" ? `<span class="detail-item construction-to-build">Not yet built</span>` : ""}
+                ${p.construction_status === "new_build" ? `<span class="detail-item construction-new-build">New build</span>` : ""}
             </div>
             ${p.description ? `<div class="card-description">${escapeHtml(p.description.length > 220 ? p.description.slice(0, 220) + "…" : p.description)}</div>` : ""}
             ${comparisonHtml}
