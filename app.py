@@ -53,6 +53,8 @@ def api_search():
         params.excluded_districts = data["excluded_districts"]
     if data.get("near"):
         params.near = data["near"]
+    if data.get("residence_type") in ("permanent", "weekend"):
+        params.residence_type = data["residence_type"]
 
     # Cap pages in serverless environments (Vercel has 10s timeout on free tier)
     max_pages = min(params.max_pages, 2) if os.environ.get("VERCEL") else params.max_pages
@@ -65,6 +67,7 @@ def api_search():
         subtypes=subtypes or None,
         excluded_districts=params.excluded_districts or None,
         near=params.near,
+        residence_type=params.residence_type,
     )
 
     # Rate all properties

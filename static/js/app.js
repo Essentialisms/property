@@ -66,6 +66,7 @@ async function doSearch() {
     const minSize = document.getElementById("minSize").value;
     const sortBy = document.getElementById("sortBy").value;
     const houseSubtype = document.getElementById("houseSubtype")?.value;
+    const residenceType = document.getElementById("residenceType")?.value;
 
     showLoading(true);
     hideResults();
@@ -77,6 +78,7 @@ async function doSearch() {
     if (minSize) body.min_size = parseFloat(minSize);
     if (sortBy) body.sort_by = sortBy;
     if (propertyType === "house" && houseSubtype) body.subtype = houseSubtype;
+    if (residenceType) body.residence_type = residenceType;
 
     try {
         const resp = await fetch("/api/search", {
@@ -280,6 +282,7 @@ function createPropertyCard(p) {
                 ${p.area_m2 != null ? `<span class="detail-item"><strong>${p.area_m2} m²</strong></span>` : ""}
                 ${p.rooms != null ? `<span class="detail-item"><strong>${p.rooms}</strong> <span>rooms</span></span>` : ""}
                 ${(p.subtype || p.property_type) ? `<span class="detail-item"><span>${escapeHtml(subtypeLabel(p.subtype) || p.property_type)}</span></span>` : ""}
+                ${p.residence_type === "weekend" ? `<span class="detail-item residence-weekend">Weekend / vacation</span>` : ""}
             </div>
             ${comparisonHtml}
             ${scoreBarsHtml}

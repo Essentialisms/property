@@ -17,6 +17,7 @@ class Property:
     image_url: Optional[str] = None
     rooms: Optional[float] = None
     subtype: Optional[str] = None  # detached / semi_detached / townhouse / villa / bungalow / multi_family
+    residence_type: Optional[str] = None  # 'permanent' | 'weekend'
 
     def to_dict(self):
         return asdict(self)
@@ -73,6 +74,7 @@ class SearchParams:
     min_size: Optional[float] = None
     max_size: Optional[float] = None
     sort_by: str = "deal_score"  # "deal_score", "growth_score", "price", "size"
+    residence_type: Optional[str] = None  # 'permanent' | 'weekend' | None
     max_pages: int = 5
 
     def to_dict(self):

@@ -10,6 +10,7 @@ from scraper.parser import parse_search_results, parse_total_pages
 from scraper.blob_fetch import fetch_from_blob
 from analyzer.districts import identify_district, resolve_bezirk, near_bezirke
 from analyzer.house_types import classify_house
+from analyzer.residence import classify_residence
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,7 @@ def search_properties(
     subtypes: list[str] | None = None,
     excluded_districts: list[str] | None = None,
     near: str | None = None,
+    residence_type: str | None = None,
 ) -> tuple[list[Property], bool, str | None]:
     """Scrape ImmoScout24 for Berlin property listings.
 
@@ -68,10 +70,12 @@ def search_properties(
     blob_props, blob_err = fetch_from_blob()
     if blob_props is not None:
         all_properties = blob_props
-        # Enrich each property with its house subtype (cheap title classification).
+        # Enrich each property with its house subtype + residence type.
         for p in all_properties:
             if p.property_type == "house" and not p.subtype:
                 p.subtype = classify_house(p.title)
+            if not p.residence_type:
+                p.residence_type = classify_residence(p.title)
         if property_type and property_type != "all":
             all_properties = [p for p in all_properties if p.property_type == property_type]
 
@@ -91,6 +95,8 @@ def search_properties(
         if subtypes:
             wanted = set(subtypes)
             all_properties = [p for p in all_properties if p.subtype in wanted]
+        if residence_type in ("permanent", "weekend"):
+            all_properties = [p for p in all_properties if p.residence_type == residence_type]
         return all_properties, False, None
 
     slug = PROPERTY_TYPE_SLUGS.get(property_type, PROPERTY_TYPE_SLUGS["land"])

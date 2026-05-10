@@ -66,6 +66,7 @@ Return ONLY a JSON object with these fields (omit fields that aren't mentioned):
 - near: a single Ortsteil or Bezirk name when the user says "near X" / "around X" / "close to X" (e.g. "near Wannsee" → "Wannsee"). Set this INSTEAD OF districts when phrased as proximity, never both for the same location.
 - min_size: number (minimum area in m2)
 - max_size: number (maximum area in m2)
+- residence_type: "permanent" if user wants somewhere they can register as Hauptwohnsitz / live year-round / not a vacation home; "weekend" if they explicitly want a weekend / vacation / Datsche / Ferienhaus / Erholungsgrundstück; omit if no preference.
 - sort_by: "deal_score" | "growth_score" | "price" | "size"
 
 For sort_by, use "deal_score" if the user wants cheap/affordable/bargain/undervalued properties, "growth_score" if they want investment potential/up-and-coming areas, "price" for cheapest first, "size" for largest first.
@@ -90,6 +91,9 @@ Return ONLY the JSON, no other text."""
     response_text = response.choices[0].message.content.strip()
     data = json.loads(response_text)
 
+    rt = data.get("residence_type")
+    if rt not in ("permanent", "weekend"):
+        rt = None
     return SearchParams(
         budget=data.get("budget"),
         property_type=data.get("property_type", "land"),
@@ -99,4 +103,5 @@ Return ONLY the JSON, no other text."""
         min_size=data.get("min_size"),
         max_size=data.get("max_size"),
         sort_by=data.get("sort_by", "deal_score"),
+        residence_type=rt,
     )

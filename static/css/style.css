@@ -382,6 +382,13 @@ main {
     color: #991b1b;
     border: 1px solid #fca5a5;
 }
+.residence-weekend {
+    background: #e0f2fe;
+    color: #075985;
+    border-radius: 999px;
+    padding: 0.05rem 0.5rem !important;
+    font-size: 0.72rem;
+}
 
 /* Card footer */
 .card-footer {
