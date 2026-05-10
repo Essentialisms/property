@@ -2,13 +2,17 @@
 
 import os
 import logging
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
 
 from scraper.models import SearchParams, SearchResult
 from scraper.immoscout import search_properties, get_demo_properties
 from analyzer.scorer import rate_properties, filter_by_budget, filter_by_size, sort_properties
 from analyzer.districts import get_districts_summary
 from nlp.query_parser import parse_query, is_ai_mode_available
+
+from auth import quota, stripe_handler
+from auth.jwt_verify import user_id_from_request
+from auth import supabase_client as supa
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,6 +27,22 @@ def index():
 
 @app.route("/api/search", methods=["POST"])
 def api_search():
+    # Quota gate before doing any work — anonymous get 2 free / browser,
+    # authenticated get 1 / day, subscribers unlimited.
+    user_id = user_id_from_request(request.headers)
+    anon_cookie = request.cookies.get(quota.COOKIE_NAME)
+    q = quota.check_and_consume(user_id, anon_cookie)
+    if not q.allowed:
+        status = 401 if q.reason == "signup_required" else 402
+        return jsonify({
+            "error": q.reason,
+            "message": (
+                "Create a free account to keep searching."
+                if q.reason == "signup_required"
+                else "You've used today's free search. Subscribe for unlimited."
+            ),
+        }), status
+
     data = request.get_json(silent=True) or {}
 
     nl_query = data.get("query", "").strip()
@@ -106,7 +126,86 @@ def api_search():
         parsed_params=params.to_dict() if nl_query else None,
     )
 
-    return jsonify(result.to_dict())
+    payload = result.to_dict()
+    payload["quota"] = {
+        "anonymous": user_id is None,
+        "remaining_anon": q.remaining_anon,
+    }
+    response = make_response(jsonify(payload))
+    if q.cookie_value:
+        response.set_cookie(
+            quota.COOKIE_NAME, q.cookie_value,
+            max_age=quota.COOKIE_MAX_AGE, httponly=True, samesite="Lax",
+            secure=not app.debug,
+        )
+    return response
+
+
+@app.route("/api/me")
+def api_me():
+    """Return the current user's auth + subscription state."""
+    user_id = user_id_from_request(request.headers)
+    if not user_id:
+        return jsonify({"authenticated": False})
+    sub = supa.get_subscription(user_id) if supa.is_configured() else None
+    return jsonify({
+        "authenticated": True,
+        "user_id": user_id,
+        "subscription": {
+            "active": bool(sub and (sub.get("status") or "").lower() in ("active", "trialing")),
+            "plan": sub.get("plan") if sub else None,
+            "status": sub.get("status") if sub else None,
+            "current_period_end": sub.get("current_period_end") if sub else None,
+        },
+    })
+
+
+@app.route("/api/checkout", methods=["POST"])
+def api_checkout():
+    user_id = user_id_from_request(request.headers)
+    if not user_id:
+        return jsonify({"error": "auth_required"}), 401
+    if not stripe_handler.is_configured():
+        return jsonify({"error": "stripe_not_configured"}), 503
+    body = request.get_json(silent=True) or {}
+    plan = body.get("plan")
+    if plan not in stripe_handler.PLAN_TO_PRICE_ENV:
+        return jsonify({"error": "invalid_plan"}), 400
+    origin = request.headers.get("Origin") or request.host_url.rstrip("/")
+    url = stripe_handler.create_checkout_session(
+        plan=plan,
+        user_id=user_id,
+        user_email=body.get("email"),
+        success_url=f"{origin}/?subscribed=1",
+        cancel_url=f"{origin}/?canceled=1",
+    )
+    if not url:
+        return jsonify({"error": "checkout_failed"}), 500
+    return jsonify({"url": url})
+
+
+@app.route("/api/portal", methods=["POST"])
+def api_portal():
+    user_id = user_id_from_request(request.headers)
+    if not user_id:
+        return jsonify({"error": "auth_required"}), 401
+    sub = supa.get_subscription(user_id) if supa.is_configured() else None
+    customer_id = sub.get("stripe_customer_id") if sub else None
+    if not customer_id:
+        return jsonify({"error": "no_customer"}), 400
+    origin = request.headers.get("Origin") or request.host_url.rstrip("/")
+    url = stripe_handler.create_portal_session(customer_id, return_url=f"{origin}/")
+    if not url:
+        return jsonify({"error": "portal_failed"}), 500
+    return jsonify({"url": url})
+
+
+@app.route("/api/stripe-webhook", methods=["POST"])
+def api_stripe_webhook():
+    payload = request.get_data()
+    sig = request.headers.get("Stripe-Signature")
+    code, msg = stripe_handler.handle_webhook(payload, sig)
+    return jsonify({"message": msg}), code
 
 
 @app.route("/api/districts")
@@ -114,6 +213,21 @@ def api_districts():
     return jsonify({
         "districts": get_districts_summary(),
         "ai_mode": is_ai_mode_available(),
+    })
+
+
+@app.route("/api/config")
+def api_config():
+    """Public Supabase keys + Stripe plan presence so the frontend can render."""
+    return jsonify({
+        "supabase_url": os.environ.get("SUPABASE_URL", ""),
+        "supabase_anon_key": os.environ.get("SUPABASE_ANON_KEY", ""),
+        "stripe_enabled": stripe_handler.is_configured(),
+        "plans": [
+            {"id": "weekly", "label": "Weekly", "price": "€1.50/week", "available": bool(stripe_handler.price_id_for("weekly"))},
+            {"id": "monthly", "label": "Monthly", "price": "€5/month", "available": bool(stripe_handler.price_id_for("monthly"))},
+            {"id": "yearly", "label": "Yearly", "price": "€60/year", "available": bool(stripe_handler.price_id_for("yearly"))},
+        ],
     })
 
 

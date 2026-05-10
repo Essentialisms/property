@@ -410,6 +410,66 @@ main {
     font-size: 0.72rem;
 }
 
+/* Auth header slot */
+.auth-slot { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; }
+.auth-wrap { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+.auth-email { color: var(--text-secondary); }
+.auth-link {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-primary); padding: 0.3rem 0.7rem; border-radius: 6px;
+    font-size: 0.82rem; cursor: pointer;
+}
+.auth-link.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.auth-link:hover { filter: brightness(0.95); }
+
+/* Modal */
+.modal {
+    display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+    z-index: 100; align-items: center; justify-content: center;
+}
+.modal-card {
+    background: #fff; border-radius: 10px; padding: 0; min-width: 360px;
+    max-width: 460px; box-shadow: 0 18px 48px rgba(2, 6, 23, 0.35);
+}
+.modal-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.modal-head h2 { margin: 0; font-size: 1.05rem; }
+.modal-close {
+    background: transparent; border: 0; font-size: 1.4rem; cursor: pointer;
+    color: var(--text-secondary);
+}
+.modal-body { padding: 1.1rem 1.25rem; }
+.modal-body label {
+    display: block; font-size: 0.8rem; color: var(--text-secondary);
+    margin-bottom: 0.6rem;
+}
+.modal-body input {
+    display: block; width: 100%; margin-top: 0.25rem; padding: 0.55rem 0.7rem;
+    border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem;
+}
+.modal-primary {
+    width: 100%; background: #2563eb; color: #fff; border: 0;
+    padding: 0.65rem 1rem; border-radius: 6px; font-size: 0.95rem;
+    cursor: pointer; margin-top: 0.5rem;
+}
+.modal-primary:hover { background: #1d4ed8; }
+.auth-error { color: #991b1b; font-size: 0.85rem; min-height: 1.1rem; margin: 0.4rem 0; }
+.auth-switch { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.8rem; text-align: center; }
+.auth-switch a { color: #2563eb; }
+
+/* Paywall plan grid */
+.paywall-plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin-top: 0.8rem; }
+.paywall-plan-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.8rem 0.4rem; cursor: pointer; font-size: 0.85rem;
+}
+.paywall-plan-btn:hover { border-color: #2563eb; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15); }
+.paywall-plan-btn strong { font-size: 0.95rem; }
+.paywall-plan-btn span { color: var(--text-secondary); }
+
 /* Card footer */
 .card-footer {
     display: flex;

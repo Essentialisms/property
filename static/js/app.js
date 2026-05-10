@@ -125,9 +125,19 @@ async function doSearch() {
     try {
         const resp = await fetch("/api/search", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...(typeof authHeader === "function" ? authHeader() : {}) },
             body: JSON.stringify(body),
         });
+        if (resp.status === 401 || resp.status === 402) {
+            const err = await resp.json().catch(() => ({}));
+            const reason = err.error || (resp.status === 401 ? "signup_required" : "subscribe_required");
+            if (typeof openPaywall === "function") {
+                openPaywall(reason);
+            } else {
+                showError(err.message || "Sign in required.");
+            }
+            return;
+        }
         const data = await resp.json();
         currentResults = data;
         renderResults(data);

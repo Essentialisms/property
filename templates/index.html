@@ -11,8 +11,51 @@
         <div class="header-content">
             <h1>Berlin Property Finder</h1>
             <span class="search-mode-badge" id="searchModeBadge" title="Search mode"></span>
+            <div class="auth-slot" id="authSlot"></div>
         </div>
     </header>
+
+    <!-- Auth modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-card">
+            <div class="modal-head">
+                <h2 id="authModalTitle">Sign in</h2>
+                <button class="modal-close" id="authModalClose">×</button>
+            </div>
+            <div class="modal-body">
+                <label>Email <input type="email" id="authEmail" autocomplete="email"></label>
+                <label>Password <input type="password" id="authPassword" autocomplete="current-password"></label>
+                <div class="auth-error" id="authModalError"></div>
+                <button class="modal-primary" id="authModalSubmit" data-mode="signin">Sign in</button>
+                <div class="auth-switch" id="authModalSwitch"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paywall modal -->
+    <div class="modal" id="paywallModal">
+        <div class="modal-card">
+            <div class="modal-head">
+                <h2 id="paywallTitle">Upgrade to keep searching</h2>
+                <button class="modal-close" id="paywallClose">×</button>
+            </div>
+            <div class="modal-body">
+                <p id="paywallSubtitle"></p>
+                <button class="modal-primary" id="paywallSignUp">Create free account</button>
+                <div id="paywallPlans" class="paywall-plans">
+                    <button class="paywall-plan-btn" data-plan="weekly">
+                        <strong>Weekly</strong><span>€1.50/week</span>
+                    </button>
+                    <button class="paywall-plan-btn" data-plan="monthly">
+                        <strong>Monthly</strong><span>€5/month</span>
+                    </button>
+                    <button class="paywall-plan-btn" data-plan="yearly">
+                        <strong>Yearly</strong><span>€60/year</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <main>
         <!-- Natural Language Search -->
@@ -144,6 +187,8 @@
         <p>Berlin Property Finder &mdash; Data from ImmoScout24 &amp; Berlin market reports (2025)</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="/static/js/auth.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>
