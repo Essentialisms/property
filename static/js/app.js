@@ -34,28 +34,43 @@ async function loadDistricts() {
         const select = document.getElementById("district");
         const bezirke = data.districts.filter(d => d.kind !== "ortsteil");
         const ortsteile = data.districts.filter(d => d.kind === "ortsteil");
+        const excludeSelect = document.getElementById("excludedDistricts");
         if (bezirke.length) {
             const grp = document.createElement("optgroup");
             grp.label = "Bezirke (whole borough)";
+            const xgrp = document.createElement("optgroup");
+            xgrp.label = "Bezirke";
             bezirke.forEach(d => {
                 const opt = document.createElement("option");
                 opt.value = d.name;
                 opt.textContent = `${d.name} (${formatEur(d.avg_price_m2)}/m²)`;
                 grp.appendChild(opt);
+                const xopt = document.createElement("option");
+                xopt.value = d.name;
+                xopt.textContent = d.name;
+                xgrp.appendChild(xopt);
             });
             select.appendChild(grp);
+            if (excludeSelect) excludeSelect.appendChild(xgrp);
         }
         if (ortsteile.length) {
             const grp = document.createElement("optgroup");
             grp.label = "Ortsteile (single neighborhood)";
+            const xgrp = document.createElement("optgroup");
+            xgrp.label = "Ortsteile";
             ortsteile.forEach(d => {
                 const opt = document.createElement("option");
                 opt.value = d.name;
                 const parent = d.parent ? ` — in ${d.parent}` : "";
                 opt.textContent = `${d.name}${parent}`;
                 grp.appendChild(opt);
+                const xopt = document.createElement("option");
+                xopt.value = d.name;
+                xopt.textContent = `${d.name}${parent}`;
+                xgrp.appendChild(xopt);
             });
             select.appendChild(grp);
+            if (excludeSelect) excludeSelect.appendChild(xgrp);
         }
 
         // Populate reference table
@@ -88,6 +103,7 @@ async function doSearch() {
     const houseSubtype = document.getElementById("houseSubtype")?.value;
     const residenceType = document.getElementById("residenceType")?.value;
     const constructionStatus = document.getElementById("constructionStatus")?.value;
+    const excludedDistricts = Array.from(document.getElementById("excludedDistricts")?.selectedOptions || []).map(o => o.value).filter(Boolean);
 
     showLoading(true);
     hideResults();
@@ -96,6 +112,7 @@ async function doSearch() {
     if (budget) body.budget = parseFloat(budget);
     if (propertyType) body.property_type = propertyType;
     if (district) body.districts = [district];
+    if (excludedDistricts.length) body.excluded_districts = excludedDistricts;
     if (minSize) body.min_size = parseFloat(minSize);
     if (sortBy) body.sort_by = sortBy;
     if (propertyType === "house" && houseSubtype) body.subtype = houseSubtype;
