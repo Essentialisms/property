@@ -61,55 +61,15 @@ function renderAuthHeader(session) {
     }
 }
 
-function openAuthModal(mode) {
+function openAuthModal(_mode) {
     const m = document.getElementById("authModal");
-    document.getElementById("authModalTitle").textContent =
-        mode === "signup" ? "Create your account" : "Sign in";
-    document.getElementById("authModalSwitch").innerHTML =
-        mode === "signup"
-            ? `Already have an account? <a href="#" id="switchToSignIn">Sign in</a>`
-            : `New here? <a href="#" id="switchToSignUp">Create an account</a>`;
-    document.getElementById("authModalSubmit").textContent =
-        mode === "signup" ? "Sign up" : "Sign in";
-    document.getElementById("authModalSubmit").dataset.mode = mode;
+    document.getElementById("authModalTitle").textContent = "Sign in";
     document.getElementById("authModalError").textContent = "";
     m.style.display = "flex";
-    document.getElementById("authEmail").focus();
-    const switchSignIn = document.getElementById("switchToSignIn");
-    const switchSignUp = document.getElementById("switchToSignUp");
-    if (switchSignIn) switchSignIn.addEventListener("click", e => { e.preventDefault(); openAuthModal("signin"); });
-    if (switchSignUp) switchSignUp.addEventListener("click", e => { e.preventDefault(); openAuthModal("signup"); });
 }
 
 function closeAuthModal() {
     document.getElementById("authModal").style.display = "none";
-}
-
-async function submitAuth() {
-    const mode = document.getElementById("authModalSubmit").dataset.mode || "signin";
-    const email = document.getElementById("authEmail").value.trim();
-    const password = document.getElementById("authPassword").value;
-    const errEl = document.getElementById("authModalError");
-    errEl.textContent = "";
-    if (!email || !password) {
-        errEl.textContent = "Email and password required.";
-        return;
-    }
-    if (!supabaseClient) {
-        errEl.textContent = "Auth not configured.";
-        return;
-    }
-    const fn = mode === "signup" ? supabaseClient.auth.signUp : supabaseClient.auth.signInWithPassword;
-    const { data, error } = await fn.call(supabaseClient.auth, { email, password });
-    if (error) {
-        errEl.textContent = error.message || "Authentication failed.";
-        return;
-    }
-    if (mode === "signup" && data && !data.session) {
-        errEl.textContent = "Account created. Check your email to confirm, then sign in.";
-        return;
-    }
-    closeAuthModal();
 }
 
 function openPaywall(reason) {
@@ -184,8 +144,6 @@ async function signInWithOAuth(provider) {
 
 document.addEventListener("DOMContentLoaded", () => {
     initAuth();
-    const submitBtn = document.getElementById("authModalSubmit");
-    if (submitBtn) submitBtn.addEventListener("click", submitAuth);
     const closeBtn = document.getElementById("authModalClose");
     if (closeBtn) closeBtn.addEventListener("click", closeAuthModal);
     const googleBtn = document.getElementById("oauthGoogle");
@@ -200,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const paywallSignUpBtn = document.getElementById("paywallSignUp");
     if (paywallSignUpBtn) paywallSignUpBtn.addEventListener("click", () => {
         closePaywall();
-        openAuthModal("signup");
+        openAuthModal();
     });
     // Close on backdrop click
     ["authModal", "paywallModal"].forEach(id => {
