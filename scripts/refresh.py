@@ -49,6 +49,7 @@ MAX_PAGES_PER_TYPE = 100  # per source per type (capped by what each source actu
 BLOB_PATHNAME = "properties.json"
 BLOB_PUBLIC_URL = "https://5dxkyfjiib2tfjbl.public.blob.vercel-storage.com/properties.json"
 RETENTION_DAYS = 60  # drop listings not seen in this many days
+HISTORY_PATH = PROJECT_ROOT / "scripts" / "refresh_history.jsonl"
 
 
 def _is24_url(prop_type: str, page: int = 1) -> str:
@@ -289,6 +290,21 @@ def main() -> None:
         log.info("Done. %d properties uploaded.", len(properties))
         if url:
             log.info("Public URL: %s", url)
+        # Append a single summary line to the history file (append-only,
+        # so cron + manual runs accumulate over time).
+        try:
+            with HISTORY_PATH.open("a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "timestamp": now_iso,
+                    "total": len(properties),
+                    "new": stats["new"],
+                    "refreshed": stats["refreshed"],
+                    "kept_archived": stats["kept_archived"],
+                    "pruned": stats["pruned"],
+                    "errors": len(errors),
+                }) + "\n")
+        except OSError as e:
+            log.warning("could not write history: %s", e)
     finally:
         tmp_path.unlink(missing_ok=True)
 
