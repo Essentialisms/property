@@ -31,6 +31,7 @@ from scraper.browser_fetch import fetch_html  # noqa: E402
 from scraper.parser import parse_search_results, parse_total_pages  # noqa: E402
 from scraper import immowelt as iw  # noqa: E402
 from scraper import kleinanzeigen as ka  # noqa: E402
+from scraper import zvg  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -162,6 +163,17 @@ def scrape_all() -> tuple[list[dict], list[str]]:
                 seen[p.id] = p.to_dict()
             page_n = url.rsplit("seite:", 1)[-1].split("/")[0] if "seite:" in url else "?"
             log.info("  ka/%s page=%s: %d", prop_type, page_n, len(props))
+
+    # Phase 4 — ZVG portal Berlin auction listings (single-page POST).
+    log.info("Phase 4: ZVG-Portal (court auctions)")
+    try:
+        zvg_props = zvg.scrape_berlin()
+        for p in zvg_props:
+            seen[p.id] = p.to_dict()
+        log.info("  zvg/berlin: %d auctions", len(zvg_props))
+    except Exception as e:
+        log.warning("ZVG scrape failed: %s", e)
+        errors.append(f"zvg: {e}")
 
     return list(seen.values()), errors
 

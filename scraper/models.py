@@ -22,6 +22,9 @@ class Property:
     construction_status: Optional[str] = None  # 'existing' | 'new_build' | 'to_build'
     bezirk: Optional[str] = None  # resolved official Berlin Bezirk
     ortsteil: Optional[str] = None  # resolved smaller neighborhood when known
+    sale_type: str = "retail"  # 'retail' | 'auction'
+    auction_date: Optional[str] = None  # ISO date for foreclosure / Zwangsversteigerung
+    case_number: Optional[str] = None  # Aktenzeichen for auction listings
 
     def to_dict(self):
         return asdict(self)

@@ -168,12 +168,30 @@ async function openPortal() {
     }
 }
 
+async function signInWithOAuth(provider) {
+    if (!supabaseClient) {
+        document.getElementById("authModalError").textContent = "Auth not configured.";
+        return;
+    }
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: window.location.origin },
+    });
+    if (error) {
+        document.getElementById("authModalError").textContent = error.message || "OAuth failed.";
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     initAuth();
     const submitBtn = document.getElementById("authModalSubmit");
     if (submitBtn) submitBtn.addEventListener("click", submitAuth);
     const closeBtn = document.getElementById("authModalClose");
     if (closeBtn) closeBtn.addEventListener("click", closeAuthModal);
+    const googleBtn = document.getElementById("oauthGoogle");
+    if (googleBtn) googleBtn.addEventListener("click", () => signInWithOAuth("google"));
+    const appleBtn = document.getElementById("oauthApple");
+    if (appleBtn) appleBtn.addEventListener("click", () => signInWithOAuth("apple"));
     const paywallClose = document.getElementById("paywallClose");
     if (paywallClose) paywallClose.addEventListener("click", closePaywall);
     document.querySelectorAll(".paywall-plan-btn").forEach(btn => {

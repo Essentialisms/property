@@ -341,6 +341,7 @@ function createPropertyCard(p) {
                 ${p.residence_type === "weekend" ? `<span class="detail-item residence-weekend">Weekend / vacation</span>` : ""}
                 ${p.construction_status === "to_build" ? `<span class="detail-item construction-to-build">Not yet built</span>` : ""}
                 ${p.construction_status === "new_build" ? `<span class="detail-item construction-new-build">New build</span>` : ""}
+                ${p.sale_type === "auction" ? `<span class="detail-item sale-auction">Auction${p.auction_date ? " · " + escapeHtml(p.auction_date) : ""}</span>` : ""}
             </div>
             ${p.description ? `<div class="card-description">${escapeHtml(p.description.length > 220 ? p.description.slice(0, 220) + "…" : p.description)}</div>` : ""}
             ${comparisonHtml}
