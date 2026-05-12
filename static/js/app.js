@@ -123,9 +123,10 @@ async function doSearch() {
     if (constructionStatus) body.construction_status = constructionStatus;
 
     try {
+        const auth = typeof authHeader === "function" ? await authHeader() : {};
         const resp = await fetch("/api/search", {
             method: "POST",
-            headers: { "Content-Type": "application/json", ...(typeof authHeader === "function" ? authHeader() : {}) },
+            headers: { "Content-Type": "application/json", ...auth },
             body: JSON.stringify(body),
         });
         if (resp.status === 401 || resp.status === 402) {

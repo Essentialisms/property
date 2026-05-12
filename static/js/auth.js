@@ -27,11 +27,22 @@ async function initAuth() {
     }
 }
 
-function authHeader() {
-    if (currentSession && currentSession.access_token) {
-        return { "Authorization": `Bearer ${currentSession.access_token}` };
+async function authHeader() {
+    // Always ask Supabase for the freshest session — handles token refresh
+    // and the early-load race where currentSession isn't populated yet.
+    let token = currentSession && currentSession.access_token;
+    if (!token && supabaseClient) {
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (data && data.session) {
+                currentSession = data.session;
+                token = data.session.access_token;
+            }
+        } catch (e) {
+            console.warn("getSession failed", e);
+        }
     }
-    return {};
+    return token ? { "Authorization": `Bearer ${token}` } : {};
 }
 
 function renderAuthHeader(session) {
@@ -101,7 +112,7 @@ async function startCheckout(plan) {
     }
     const r = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeader() },
+        headers: { "Content-Type": "application/json", ...(await authHeader()) },
         body: JSON.stringify({ plan, email: currentSession.user.email }),
     });
     const data = await r.json();
@@ -115,7 +126,7 @@ async function startCheckout(plan) {
 async function openPortal() {
     const r = await fetch("/api/portal", {
         method: "POST",
-        headers: { ...authHeader() },
+        headers: { ...(await authHeader()) },
     });
     const data = await r.json();
     if (data.url) {
