@@ -3,5 +3,5 @@ requests
 beautifulsoup4
 openai
 stripe
-PyJWT
+PyJWT[crypto]
 itsdangerous
