@@ -93,8 +93,8 @@ function openPaywall(reason) {
         document.getElementById("paywallSignUp").style.display = "";
         document.getElementById("paywallPlans").style.display = "none";
     } else {
-        title.textContent = "Upgrade to keep searching";
-        sub.textContent = "You've used today's free search. Pick a plan for unlimited.";
+        title.textContent = "Subscribe to search";
+        sub.textContent = "An active subscription is required to use the property search. Pick a plan to get unlimited access.";
         document.getElementById("paywallSignUp").style.display = "none";
         document.getElementById("paywallPlans").style.display = "";
     }

@@ -39,7 +39,7 @@ def api_search():
             "message": (
                 "Create a free account to keep searching."
                 if q.reason == "signup_required"
-                else "You've used today's free search. Subscribe for unlimited."
+                else "An active subscription is required to search."
             ),
         }), status
 

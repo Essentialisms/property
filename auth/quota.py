@@ -2,8 +2,7 @@
 
 - Anonymous: 2 free searches per browser. Tracked via signed cookie so we
   don't need a DB write for unauthenticated traffic.
-- Authenticated, no active subscription: 1 free search per UTC day.
-  Searches are recorded in Supabase.
+- Authenticated, no active subscription: blocked — they must subscribe.
 - Authenticated subscriber: unlimited.
 
 The check_and_consume() function is the single point of policy: it returns
@@ -24,7 +23,6 @@ from auth import supabase_client as supa
 logger = logging.getLogger(__name__)
 
 ANON_FREE_SEARCHES = 2
-AUTHED_FREE_PER_DAY = 1
 COOKIE_NAME = "anon_quota"
 COOKIE_MAX_AGE = 86400  # 24h
 
@@ -69,16 +67,16 @@ def has_active_subscription(user_id: str) -> bool:
 
 
 def check_and_consume(user_id: str | None, anon_cookie: str | None) -> QuotaResult:
-    """Run the quota policy and (when allowed) consume one search."""
+    """Run the quota policy and (when allowed) consume one search.
+
+    Authenticated users without an active subscription are blocked
+    immediately — no free authenticated searches.
+    """
     if user_id:
         if has_active_subscription(user_id):
             supa.record_search(user_id)
             return QuotaResult(allowed=True)
-        used_today = supa.count_searches_today_utc(user_id)
-        if used_today >= AUTHED_FREE_PER_DAY:
-            return QuotaResult(allowed=False, reason="subscribe_required")
-        supa.record_search(user_id)
-        return QuotaResult(allowed=True)
+        return QuotaResult(allowed=False, reason="subscribe_required")
 
     # Anonymous
     used = _read_anon_cookie(anon_cookie)
