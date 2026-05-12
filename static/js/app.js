@@ -192,18 +192,41 @@ function renderResults(data) {
     // Update mode badge
     updateModeBadge(data.search_mode);
 
-    // Summary
+    // Stats teaser — feed greed/FOMO
+    const props = data.properties || [];
+    const nowMs = Date.now();
+    const dayMs = 24 * 3600 * 1000;
+    const weekMs = 7 * dayMs;
+    const isFresh = (p) => p.first_seen && (nowMs - new Date(p.first_seen).getTime()) < dayMs;
+    const isWeekFresh = (p) => p.first_seen && (nowMs - new Date(p.first_seen).getTime()) < weekMs;
+    const isTopDeal = (p) => p.rating && p.rating.deal_score >= 80;
+    const isUnderpriced = (p) => p.rating && p.rating.price_vs_avg_pct != null && p.rating.price_vs_avg_pct < 70;
+    const isAuction = (p) => p.sale_type === "auction";
+    const newToday = props.filter(isFresh).length;
+    const newThisWeek = props.filter(isWeekFresh).length;
+    const topDeals = props.filter(isTopDeal).length;
+    const steals = props.filter(isUnderpriced).length;
+    const auctions = props.filter(isAuction).length;
+
+    // Summary + stat bar
     const summary = document.getElementById("resultsSummary");
     const summaryText = document.getElementById("summaryText");
     summary.style.display = "block";
-    summaryText.textContent =
-        `Found ${data.total_count} properties — showing ${data.filtered_count} within your criteria`;
+    const bait = [];
+    if (newToday > 0) bait.push(`<span class="stat-pill stat-fresh">🔥 ${newToday} new today</span>`);
+    if (newThisWeek > newToday) bait.push(`<span class="stat-pill stat-week">📅 ${newThisWeek} this week</span>`);
+    if (topDeals > 0) bait.push(`<span class="stat-pill stat-top-deal">💎 ${topDeals} top deal${topDeals > 1 ? "s" : ""}</span>`);
+    if (steals > 0) bait.push(`<span class="stat-pill stat-steal">💸 ${steals} priced &gt;30% under market</span>`);
+    if (auctions > 0) bait.push(`<span class="stat-pill stat-auction">⚖️ ${auctions} live auction${auctions > 1 ? "s" : ""}</span>`);
+    summaryText.innerHTML =
+        `<strong>${data.filtered_count}</strong> matches`
+        + (bait.length ? ` <span class="stat-bar">${bait.join(" ")}</span>` : "");
 
     // Render cards
     const grid = document.getElementById("resultsGrid");
     grid.innerHTML = "";
 
-    if (data.properties.length === 0) {
+    if (props.length === 0) {
         grid.innerHTML = `
             <div class="loading" style="display:block;">
                 <p>No properties match your criteria. Try adjusting your budget or filters.</p>
@@ -212,14 +235,50 @@ function renderResults(data) {
         return;
     }
 
-    data.properties.forEach((p) => {
-        grid.appendChild(createPropertyCard(p));
+    // For anonymous users, show only the first FREE_PREVIEW results clearly;
+    // the rest are blurred behind a FOMO overlay that opens the sign-up paywall.
+    const FREE_PREVIEW = 3;
+    const anon = data.quota && data.quota.anonymous;
+    props.forEach((p, i) => {
+        const card = createPropertyCard(p, { fresh: isFresh(p), topDeal: isTopDeal(p), steal: isUnderpriced(p) });
+        if (anon && i >= FREE_PREVIEW) {
+            card.classList.add("locked");
+        }
+        grid.appendChild(card);
     });
+
+    // Locked-overlay teaser at the bottom of the visible cards
+    if (anon && props.length > FREE_PREVIEW) {
+        const locked = props.length - FREE_PREVIEW;
+        const teaser = document.createElement("div");
+        teaser.className = "locked-overlay";
+        teaser.innerHTML = `
+            <div class="locked-card">
+                <div class="locked-title">🔒 ${locked} more match${locked > 1 ? "es" : ""} hidden</div>
+                <div class="locked-sub">Sign up free to peek — subscribe to unlock every match in your filter.</div>
+                <button class="locked-cta" id="lockedCta">See what you're missing</button>
+            </div>
+        `;
+        grid.appendChild(teaser);
+        const cta = teaser.querySelector("#lockedCta");
+        cta.addEventListener("click", () => {
+            if (typeof openPaywall === "function") openPaywall("signup_required");
+        });
+    }
 }
 
-function createPropertyCard(p) {
+function createPropertyCard(p, flags = {}) {
     const card = document.createElement("div");
     card.className = "property-card";
+
+    // FOMO / greed badges overlayed on the image
+    const teaseBadges = [];
+    if (flags.fresh) teaseBadges.push(`<span class="tease tease-fresh">🔥 New today</span>`);
+    if (flags.topDeal) teaseBadges.push(`<span class="tease tease-top">💎 Top deal</span>`);
+    if (flags.steal) teaseBadges.push(`<span class="tease tease-steal">💸 Under market</span>`);
+    const teaseHtml = teaseBadges.length
+        ? `<div class="tease-bar">${teaseBadges.join("")}</div>`
+        : "";
 
     const rating = p.rating;
     const grade = rating ? rating.grade : "?";
@@ -324,7 +383,7 @@ function createPropertyCard(p) {
     }
 
     card.innerHTML = `
-        <div class="card-image">${imageHtml}</div>
+        <div class="card-image">${teaseHtml}${imageHtml}</div>
         <div class="card-body">
             <div class="card-header">
                 <div>

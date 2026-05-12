@@ -418,6 +418,75 @@ main {
     font-weight: 600;
 }
 
+/* ===== FOMO / conversion bait ===== */
+.stat-bar {
+    display: inline-flex; flex-wrap: wrap; gap: 0.4rem;
+    margin-left: 0.6rem; vertical-align: middle;
+}
+.stat-pill {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    padding: 0.2rem 0.55rem; border-radius: 999px;
+    font-size: 0.78rem; font-weight: 600;
+}
+.stat-fresh { background: #fee2e2; color: #b91c1c; }
+.stat-week { background: #fef3c7; color: #92400e; }
+.stat-top-deal { background: #dbeafe; color: #1d4ed8; }
+.stat-steal { background: #dcfce7; color: #166534; }
+.stat-auction { background: #ede9fe; color: #5b21b6; }
+
+/* Per-card tease badges — overlay on image */
+.card-image { position: relative; }
+.tease-bar {
+    position: absolute; top: 0.45rem; left: 0.45rem; right: 0.45rem;
+    display: flex; flex-wrap: wrap; gap: 0.25rem; z-index: 2;
+}
+.tease {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(4px);
+    border-radius: 999px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.7rem; font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.tease-fresh { color: #b91c1c; }
+.tease-top { color: #1d4ed8; }
+.tease-steal { color: #166534; }
+
+/* Locked cards for anonymous users — blurred preview teaser */
+.property-card.locked {
+    position: relative;
+    filter: blur(7px) saturate(0.7);
+    pointer-events: none;
+    user-select: none;
+}
+
+.locked-overlay {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    margin-top: -3rem;
+    position: relative;
+    z-index: 3;
+}
+.locked-card {
+    background: #fff;
+    border: 2px solid #fde68a;
+    border-radius: 12px;
+    padding: 1.4rem 1.8rem;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.18);
+    text-align: center;
+    max-width: 520px;
+}
+.locked-title { font-size: 1.15rem; font-weight: 700; color: #78350f; margin-bottom: 0.4rem; }
+.locked-sub { color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1rem; }
+.locked-cta {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff; border: 0; padding: 0.65rem 1.4rem;
+    border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+}
+.locked-cta:hover { filter: brightness(1.05); }
+
 /* Auth header slot */
 .auth-slot { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; }
 .auth-wrap { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
