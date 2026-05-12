@@ -86,11 +86,23 @@ def handle_webhook(payload: bytes, sig_header: str | None) -> tuple[int, str]:
         return 400, "signature verification failed"
 
     etype = event["type"]
-    obj = event["data"]["object"]
+    raw_obj = event["data"]["object"]
+    # Normalise to a plain dict — Stripe SDK objects look dict-ish but nested
+    # 'metadata' is a StripeObject without a working .get method.
+    try:
+        obj = raw_obj.to_dict_recursive() if hasattr(raw_obj, "to_dict_recursive") else dict(raw_obj)
+    except Exception:
+        obj = dict(raw_obj) if raw_obj else {}
+    md = obj.get("metadata") or {}
+    if not isinstance(md, dict):
+        try:
+            md = dict(md)
+        except Exception:
+            md = {}
 
     if etype == "checkout.session.completed":
-        user_id = obj.get("client_reference_id") or (obj.get("metadata") or {}).get("user_id")
-        plan = (obj.get("metadata") or {}).get("plan")
+        user_id = obj.get("client_reference_id") or md.get("user_id")
+        plan = md.get("plan")
         customer_id = obj.get("customer")
         subscription_id = obj.get("subscription")
         if user_id and customer_id:
@@ -105,11 +117,10 @@ def handle_webhook(payload: bytes, sig_header: str | None) -> tuple[int, str]:
         return 200, "checkout recorded"
 
     if etype in ("customer.subscription.updated", "customer.subscription.created"):
-        user_id = (obj.get("metadata") or {}).get("user_id")
+        user_id = md.get("user_id")
         if not user_id:
-            # Fall back: look up via customer id
             return 200, "no user_id in metadata"
-        plan = (obj.get("metadata") or {}).get("plan")
+        plan = md.get("plan")
         period_end = obj.get("current_period_end")
         period_end_iso = (
             datetime.fromtimestamp(period_end, tz=timezone.utc).isoformat()
@@ -127,7 +138,7 @@ def handle_webhook(payload: bytes, sig_header: str | None) -> tuple[int, str]:
         return 200, "subscription synced"
 
     if etype == "customer.subscription.deleted":
-        user_id = (obj.get("metadata") or {}).get("user_id")
+        user_id = md.get("user_id")
         if user_id:
             supa.upsert_subscription({
                 "user_id": user_id,
