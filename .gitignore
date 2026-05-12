@@ -7,3 +7,4 @@ __pycache__/
 *.pyo
 scripts/*.log
 scripts/refresh_history.jsonl
+supabase/.temp/
