@@ -198,7 +198,7 @@ def scrape_all() -> tuple[list[dict], list[str]]:
         log.info("  ka/%s page 1: %d", prop_type, len(props))
         for p in props:
             seen[p.id] = p.to_dict()
-        total = min(ka.parse_total_pages(html), MAX_PAGES_PER_TYPE)
+        total = min(ka.parse_total_pages(html), MAX_PAGES_PER_BUCKET)
         for page in range(2, total + 1):
             u = ka.url_for(prop_type, page)
             ka_extra_urls.append(u)
