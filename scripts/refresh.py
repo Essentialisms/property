@@ -46,91 +46,142 @@ IS24_SLUGS = {
     "house": "haus-kaufen",
 }
 PROPERTY_TYPES = ("land", "apartment", "house")
-MAX_PAGES_PER_TYPE = 100  # per source per type (capped by what each source actually paginates)
+MAX_PAGES_PER_BUCKET = 50  # per (source, type, price bucket)
 BLOB_PATHNAME = "properties.json"
+
+# Price-range partitioning. Sources cap pagination at ~1000 results per query;
+# splitting by price bucket lets us reach the full inventory in each bucket.
+# Buckets are sized to roughly fit under the cap for the Berlin market.
+PRICE_BUCKETS: dict[str, list[tuple[int | None, int | None]]] = {
+    "land": [
+        (None, 100_000),
+        (100_000, 200_000),
+        (200_000, 350_000),
+        (350_000, 600_000),
+        (600_000, 1_000_000),
+        (1_000_000, None),
+    ],
+    "apartment": [
+        (None, 150_000),
+        (150_000, 250_000),
+        (250_000, 350_000),
+        (350_000, 500_000),
+        (500_000, 700_000),
+        (700_000, 1_000_000),
+        (1_000_000, 1_500_000),
+        (1_500_000, None),
+    ],
+    "house": [
+        (None, 300_000),
+        (300_000, 500_000),
+        (500_000, 700_000),
+        (700_000, 1_000_000),
+        (1_000_000, 1_500_000),
+        (1_500_000, 2_500_000),
+        (2_500_000, None),
+    ],
+}
+
+
+def _is24_price_param(price_min: int | None, price_max: int | None) -> str | None:
+    """Build the ImmoScout24 `price=MIN-MAX` query value, or None for no filter."""
+    if price_min is None and price_max is None:
+        return None
+    lo = str(price_min) if price_min is not None else ""
+    hi = str(price_max) if price_max is not None else ""
+    return f"{lo}-{hi}"
 BLOB_PUBLIC_URL = "https://5dxkyfjiib2tfjbl.public.blob.vercel-storage.com/properties.json"
 RETENTION_DAYS = 60  # drop listings not seen in this many days
 HISTORY_PATH = PROJECT_ROOT / "scripts" / "refresh_history.jsonl"
 
 
-def _is24_url(prop_type: str, page: int = 1) -> str:
+def _is24_url(prop_type: str, page: int = 1,
+              price_min: int | None = None, price_max: int | None = None) -> str:
     slug = IS24_SLUGS[prop_type]
     base = f"{IS24_BASE}/{slug}"
-    return base if page == 1 else f"{base}?pagenumber={page}"
+    params: list[str] = []
+    if page > 1:
+        params.append(f"pagenumber={page}")
+    price = _is24_price_param(price_min, price_max)
+    if price:
+        params.append(f"price={price}")
+    return base + (("?" + "&".join(params)) if params else "")
 
 
 def scrape_all() -> tuple[list[dict], list[str]]:
-    """Phase 1: fetch page 1 of each type from each source.
-    Phase 2: fetch additional pages based on what each source reports.
+    """Phase 1: for each (source, type, price-bucket) fetch page 1.
+    Phase 2: from page-1 totals, fetch pages 2..N of every bucket that has more.
+    Price bucketing keeps each query under the per-source pagination cap so the
+    full inventory is reachable.
     """
     seen: dict[str, dict] = {}
     errors: list[str] = []
 
-    # Phase 1 — page 1 from both sources for all 3 types
+    # Phase 1 — page 1 of every (source, type, bucket).
+    # Meta: url → (source, prop_type, price_min, price_max)
     page1_urls: list[str] = []
-    page1_meta: dict[str, tuple[str, str]] = {}  # url → (source, prop_type)
+    page1_meta: dict[str, tuple[str, str, int | None, int | None]] = {}
     for prop_type in PROPERTY_TYPES:
-        u = _is24_url(prop_type)
-        page1_urls.append(u)
-        page1_meta[u] = ("is24", prop_type)
-        u = iw.url_for(prop_type)
-        page1_urls.append(u)
-        page1_meta[u] = ("iw", prop_type)
+        buckets = PRICE_BUCKETS.get(prop_type, [(None, None)])
+        for pmin, pmax in buckets:
+            u = _is24_url(prop_type, price_min=pmin, price_max=pmax)
+            page1_urls.append(u)
+            page1_meta[u] = ("is24", prop_type, pmin, pmax)
+            u = iw.url_for(prop_type, price_min=pmin, price_max=pmax)
+            page1_urls.append(u)
+            page1_meta[u] = ("iw", prop_type, pmin, pmax)
 
-    log.info("Phase 1: fetching %d first-pages", len(page1_urls))
+    log.info("Phase 1: fetching %d first-pages across price buckets", len(page1_urls))
     page1_html = fetch_html(page1_urls)
 
     extra_urls: list[str] = []
-    extra_meta: dict[str, tuple[str, str]] = {}
+    extra_meta: dict[str, tuple[str, str, int | None, int | None]] = {}
 
-    for url, (source, prop_type) in page1_meta.items():
+    for url, (source, prop_type, pmin, pmax) in page1_meta.items():
         html = page1_html.get(url, "")
+        bucket_label = f"{(pmin or 0)//1000}k-{(pmax or 0)//1000 if pmax else '∞'}k"
         if not html:
-            errors.append(f"{source}/{prop_type}: empty response on page 1")
+            errors.append(f"{source}/{prop_type}/{bucket_label}: empty response on page 1")
             continue
         if source == "is24":
             props = parse_search_results(html)
             for p in props:
                 p.property_type = prop_type
                 seen[p.id] = p.to_dict()
-            total = min(parse_total_pages(html), MAX_PAGES_PER_TYPE)
-            log.info("  is24/%s page 1: %d listings (%d pages total)", prop_type, len(props), total)
+            total = min(parse_total_pages(html), MAX_PAGES_PER_BUCKET)
+            log.info("  is24/%s/%s page 1: %d listings (%d pages in bucket)", prop_type, bucket_label, len(props), total)
             for page in range(2, total + 1):
-                page_url = _is24_url(prop_type, page)
+                page_url = _is24_url(prop_type, page=page, price_min=pmin, price_max=pmax)
                 extra_urls.append(page_url)
-                extra_meta[page_url] = ("is24", prop_type)
+                extra_meta[page_url] = ("is24", prop_type, pmin, pmax)
         else:
             props = iw.parse_listings(html, prop_type)
             for p in props:
                 seen[p.id] = p.to_dict()
-            total = min(iw.parse_total_pages(html), MAX_PAGES_PER_TYPE)
-            log.info("  iw/%s page 1: %d listings (%d pages total)", prop_type, len(props), total)
+            total = min(iw.parse_total_pages(html), MAX_PAGES_PER_BUCKET)
+            log.info("  iw/%s/%s page 1: %d listings (%d pages in bucket)", prop_type, bucket_label, len(props), total)
             for page in range(2, total + 1):
-                page_url = iw.url_for(prop_type, page)
+                page_url = iw.url_for(prop_type, page=page, price_min=pmin, price_max=pmax)
                 extra_urls.append(page_url)
-                extra_meta[page_url] = ("iw", prop_type)
+                extra_meta[page_url] = ("iw", prop_type, pmin, pmax)
 
     if extra_urls:
-        log.info("Phase 2: fetching %d additional pages", len(extra_urls))
+        log.info("Phase 2: fetching %d additional pages across buckets", len(extra_urls))
         extra_html = fetch_html(extra_urls)
 
-        for url, (source, prop_type) in extra_meta.items():
+        for url, (source, prop_type, pmin, pmax) in extra_meta.items():
             html = extra_html.get(url, "")
             if not html:
-                errors.append(f"{source}/{prop_type}: empty response on {url}")
                 continue
             if source == "is24":
                 props = parse_search_results(html)
                 for p in props:
                     p.property_type = prop_type
                     seen[p.id] = p.to_dict()
-                log.info("  is24/%s %s: %d", prop_type, url.rsplit("=", 1)[-1], len(props))
             else:
                 props = iw.parse_listings(html, prop_type)
                 for p in props:
                     seen[p.id] = p.to_dict()
-                page_n = url.rsplit("page=", 1)[-1] if "page=" in url else "?"
-                log.info("  iw/%s page=%s: %d", prop_type, page_n, len(props))
 
     # Phase 3 — Kleinanzeigen via plain HTTP (no bot protection, ~0.5s per page).
     log.info("Phase 3: Kleinanzeigen")

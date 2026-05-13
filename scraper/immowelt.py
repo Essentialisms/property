@@ -22,9 +22,18 @@ BASE_URL = "https://www.immowelt.de/classified-search"
 PROPERTY_TYPES = ("land", "apartment", "house")
 
 
-def url_for(property_type: str, page: int = 1) -> str:
+def url_for(
+    property_type: str,
+    page: int = 1,
+    price_min: int | None = None,
+    price_max: int | None = None,
+) -> str:
     estate_type = ESTATE_TYPE_PARAM[property_type]
     qs = f"distributionTypes=Buy&estateTypes={estate_type}&locations={BERLIN_LOCATION_CODE}"
+    if price_min is not None:
+        qs += f"&priceMin={price_min}"
+    if price_max is not None:
+        qs += f"&priceMax={price_max}"
     if page > 1:
         qs += f"&page={page}"
     return f"{BASE_URL}?{qs}"
