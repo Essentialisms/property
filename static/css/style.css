@@ -607,52 +607,84 @@ main {
     margin-top: 2rem;
 }
 .district-ref-toggle {
-    background: none;
-    border: none;
-    color: var(--accent);
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
     cursor: pointer;
-    font-size: 0.9rem;
-    text-decoration: underline;
-    padding: 0.25rem 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+}
+.district-ref-toggle:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
 }
 .district-ref-panel {
     margin-top: 0.75rem;
-    background: var(--surface);
-    border-radius: 8px;
+    background: #fff;
+    border-radius: 10px;
     border: 1px solid var(--border);
     overflow: hidden;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 }
 .district-ref-panel table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
 }
 .district-ref-panel th {
-    background: var(--bg);
+    background: #f8fafc;
     text-align: left;
-    padding: 0.6rem 1rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.03em;
+    padding: 0.85rem 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: none;
+    font-size: 0.85rem;
+    letter-spacing: 0;
+    border-bottom: 2px solid var(--border);
+}
+.district-ref-panel th:nth-child(2),
+.district-ref-panel th:nth-child(3) {
+    text-align: right;
 }
 .district-ref-panel td {
-    padding: 0.5rem 1rem;
-    border-top: 1px solid var(--border);
+    padding: 0.7rem 1.1rem;
+    border-top: 1px solid #f1f5f9;
+    color: #0f172a;
+    line-height: 1.4;
+}
+.district-ref-panel td:first-child {
+    font-weight: 600;
+}
+.district-ref-panel td:nth-child(2),
+.district-ref-panel td:nth-child(3) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.district-ref-panel tbody tr:nth-child(odd) {
+    background: #fcfcfd;
+}
+.district-ref-panel tbody tr:hover {
+    background: #f1f5f9;
 }
 .tier-badge {
-    font-size: 0.75rem;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 700;
     text-transform: capitalize;
+    display: inline-block;
+    letter-spacing: 0.02em;
 }
-.tier-premium { background: #ede9fe; color: #6d28d9; }
-.tier-high { background: #dbeafe; color: #1d4ed8; }
-.tier-mid { background: #dcfce7; color: #166534; }
-.tier-emerging { background: #fef3c7; color: #92400e; }
-.tier-budget { background: #f1f5f9; color: #475569; }
+.tier-premium { background: #ede9fe; color: #5b21b6; }
+.tier-high    { background: #dbeafe; color: #1e40af; }
+.tier-mid     { background: #dcfce7; color: #14532d; }
+.tier-emerging{ background: #fef3c7; color: #78350f; }
+.tier-budget  { background: #f1f5f9; color: #334155; }
+.growth-up   { color: #15803d; font-weight: 600; }
+.growth-down { color: #b91c1c; font-weight: 600; }
+.growth-flat { color: #64748b; }
 
 /* ===== Footer ===== */
 footer {

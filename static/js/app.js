@@ -79,10 +79,11 @@ async function loadDistricts() {
         const tbody = document.getElementById("districtTableBody");
         data.districts.forEach((d) => {
             const tr = document.createElement("tr");
+            const growthClass = d.growth_pct > 0 ? "growth-up" : (d.growth_pct < 0 ? "growth-down" : "growth-flat");
             tr.innerHTML = `
-                <td>${d.name}</td>
+                <td>${escapeHtml(d.name)}</td>
                 <td>${formatEur(d.avg_price_m2)}/m²</td>
-                <td>${d.growth_pct > 0 ? "+" : ""}${d.growth_pct}%</td>
+                <td class="${growthClass}">${d.growth_pct > 0 ? "+" : ""}${d.growth_pct}%</td>
                 <td><span class="tier-badge tier-${d.tier}">${d.tier}</span></td>
             `;
             tbody.appendChild(tr);
