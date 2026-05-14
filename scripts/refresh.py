@@ -46,12 +46,13 @@ IS24_SLUGS = {
     "house": "haus-kaufen",
 }
 PROPERTY_TYPES = ("land", "apartment", "house")
-MAX_PAGES_PER_BUCKET = 50  # per (source, type, price bucket)
+MAX_PAGES_PER_BUCKET = 65  # per (source, type, price bucket) — 65 × 20 = 1300 capacity
 BLOB_PATHNAME = "properties.json"
 
 # Price-range partitioning. Sources cap pagination at ~1000 results per query;
 # splitting by price bucket lets us reach the full inventory in each bucket.
-# Buckets are sized to roughly fit under the cap for the Berlin market.
+# Boundaries are sized from measured ImmoScout24 numberOfHits per band so
+# every bucket stays under the ~1300 capacity (65 pages × 20).
 PRICE_BUCKETS: dict[str, list[tuple[int | None, int | None]]] = {
     "land": [
         (None, 100_000),
@@ -62,23 +63,34 @@ PRICE_BUCKETS: dict[str, list[tuple[int | None, int | None]]] = {
         (1_000_000, None),
     ],
     "apartment": [
-        (None, 150_000),
-        (150_000, 250_000),
-        (250_000, 350_000),
-        (350_000, 500_000),
-        (500_000, 700_000),
-        (700_000, 1_000_000),
-        (1_000_000, 1_500_000),
-        (1_500_000, None),
+        (None, 150_000),       # ~358
+        (150_000, 200_000),    # ~877
+        (200_000, 250_000),    # ~1130
+        (250_000, 300_000),    # ~1259
+        (300_000, 350_000),    # ~976
+        (350_000, 400_000),    # ~1033
+        (400_000, 450_000),    # ~719
+        (450_000, 500_000),    # ~651
+        (500_000, 600_000),    # ~884
+        (600_000, 700_000),    # ~697
+        (700_000, 850_000),    # ~713
+        (850_000, 1_000_000),  # ~638
+        (1_000_000, 1_250_000),# ~363
+        (1_250_000, 1_500_000),# ~247
+        (1_500_000, 2_000_000),# ~257
+        (2_000_000, None),     # ~194
     ],
     "house": [
-        (None, 300_000),
-        (300_000, 500_000),
-        (500_000, 700_000),
-        (700_000, 1_000_000),
-        (1_000_000, 1_500_000),
-        (1_500_000, 2_500_000),
-        (2_500_000, None),
+        (None, 350_000),        # ~116
+        (350_000, 500_000),     # ~504
+        (500_000, 650_000),     # ~832
+        (650_000, 800_000),     # ~673
+        (800_000, 1_000_000),   # ~464
+        (1_000_000, 1_250_000), # ~180
+        (1_250_000, 1_500_000), # ~160
+        (1_500_000, 2_000_000), # ~168
+        (2_000_000, 3_000_000), # ~140
+        (3_000_000, None),      # ~124
     ],
 }
 
