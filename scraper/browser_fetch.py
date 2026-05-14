@@ -60,20 +60,33 @@ def fetch_html(urls: list[str]) -> dict[str, str]:
         page = context.pages[0] if context.pages else context.new_page()
         for url in urls:
             logger.info("Fetching %s", url)
-            try:
-                page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                _wait_past_waf(page)
+            html = ""
+            # One retry on any transient navigation failure (ERR_NETWORK_CHANGED,
+            # connection resets, etc.). A single bad page must never abort a
+            # multi-hour run, so every exception here is swallowed per-URL.
+            for attempt in (1, 2):
                 try:
-                    page.wait_for_load_state("networkidle", timeout=10000)
-                except PlaywrightTimeoutError:
-                    pass
-                if _looks_like_waf(page):
-                    logger.warning("Still on WAF page for %s", url)
-                    out[url] = ""
-                else:
-                    out[url] = page.content()
-            except PlaywrightTimeoutError as e:
-                logger.warning("Timeout fetching %s: %s", url, e)
-                out[url] = ""
-        context.close()
+                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                    _wait_past_waf(page)
+                    try:
+                        page.wait_for_load_state("networkidle", timeout=10000)
+                    except PlaywrightTimeoutError:
+                        pass
+                    if _looks_like_waf(page):
+                        logger.warning("Still on WAF page for %s", url)
+                        html = ""
+                    else:
+                        html = page.content()
+                    break
+                except PlaywrightTimeoutError as e:
+                    logger.warning("Timeout fetching %s (attempt %d): %s", url, attempt, e)
+                except Exception as e:  # noqa: BLE001 — keep the run alive
+                    logger.warning("Error fetching %s (attempt %d): %s", url, attempt, e)
+                    if attempt == 1:
+                        time.sleep(3)  # brief backoff before the retry
+            out[url] = html
+        try:
+            context.close()
+        except Exception:
+            pass
     return out
