@@ -86,6 +86,7 @@ def api_search():
         params.residence_type = data["residence_type"]
     if data.get("construction_status") in ("existing", "new_build", "to_build"):
         params.construction_status = data["construction_status"]
+    include_no_price = bool(data.get("include_no_price", False))
 
     # Cap pages in serverless environments (Vercel has 10s timeout on free tier)
     max_pages = min(params.max_pages, 2) if os.environ.get("VERCEL") else params.max_pages
@@ -101,6 +102,7 @@ def api_search():
         near=params.near,
         residence_type=params.residence_type,
         construction_status=params.construction_status,
+        include_no_price=include_no_price,
     )
 
     # Rate all properties

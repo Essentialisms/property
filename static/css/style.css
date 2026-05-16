@@ -685,6 +685,9 @@ main {
 .growth-up   { color: #15803d; font-weight: 600; }
 .growth-down { color: #b91c1c; font-weight: 600; }
 .growth-flat { color: #64748b; }
+.filter-group-checkbox label { font-weight: 500; }
+.checkbox-row { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.checkbox-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
 
 /* ===== Footer ===== */
 footer {

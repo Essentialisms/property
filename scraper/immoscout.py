@@ -78,6 +78,7 @@ def search_properties(
     residence_type: str | None = None,
     construction_status: str | None = None,
     property_types: list[str] | None = None,
+    include_no_price: bool = False,
 ) -> tuple[list[Property], bool, str | None]:
     """Scrape ImmoScout24 for Berlin property listings.
 
@@ -133,6 +134,10 @@ def search_properties(
             all_properties = [p for p in all_properties if p.residence_type == residence_type]
         if construction_status in ("existing", "new_build", "to_build"):
             all_properties = [p for p in all_properties if p.construction_status == construction_status]
+        if not include_no_price:
+            # Hide "auf Anfrage" / missing-price listings by default — they
+            # can't be deal-scored and are mostly opaque agent inquiries.
+            all_properties = [p for p in all_properties if p.price and p.price > 0]
         return all_properties, False, None
 
     slug = PROPERTY_TYPE_SLUGS.get(property_type, PROPERTY_TYPE_SLUGS["land"])

@@ -107,6 +107,7 @@ async function doSearch() {
     const residenceType = document.getElementById("residenceType")?.value;
     const constructionStatus = document.getElementById("constructionStatus")?.value;
     const excludedDistricts = Array.from(document.getElementById("excludedDistricts")?.selectedOptions || []).map(o => o.value).filter(Boolean);
+    const includeNoPrice = document.getElementById("includeNoPrice")?.checked;
 
     showLoading(true);
     hideResults();
@@ -122,6 +123,7 @@ async function doSearch() {
     if (propertyTypes.includes("house") && houseSubtypes.length) body.subtypes = houseSubtypes;
     if (residenceType) body.residence_type = residenceType;
     if (constructionStatus) body.construction_status = constructionStatus;
+    if (includeNoPrice) body.include_no_price = true;
 
     try {
         const auth = typeof authHeader === "function" ? await authHeader() : {};
